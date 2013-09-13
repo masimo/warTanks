@@ -35,8 +35,22 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 	function moveRect() {
 
 		rects[0].setTop($scope.leftPosition).setCoords();
-	
+
 		canvas.renderAll();
 	}
+
+	window.onkeydown = function(e) {
+		var key = e.keyCode;
+		if (key === 37) {
+			// left arrow
+		} else if (key === 38) {
+			// up arrow
+		} else if (key === 39) {
+			// right arrow
+		} else if (key === 40) {
+			// down arrow
+		}
+
+	};
 
 });
