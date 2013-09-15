@@ -1,11 +1,18 @@
 'use strict';
 
-
 app.controller('playRoomController', function NormalModeController($scope, $filter) {
 
 	var canvas = new fabric.Canvas('playRoomField');
-	var rects = [];
+	var objArray = [];
 	$scope.leftPosition = 300;
+	var ctrlParams = {
+		type: 1,
+		direction: '',
+		speed: 5,
+		isMoving: null
+	};
+
+	var gamePlay = new Game();
 
 
 	for (var i = 3; i > 0; i--) {
@@ -21,36 +28,91 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 			height: 45,
 			fill: '#' + color,
 			angle: 0,
-			padding: 10
+			padding: 10,
+			selectable: false
 		});
+
 		canvas.add(rect);
 
-
-		rects.push(rect);
+		objArray.push(rect);
 	};
 
 
-	$scope.$watch('leftPosition', moveRect);
-
-	function moveRect() {
-
-		rects[0].setTop($scope.leftPosition).setCoords();
-
-		canvas.renderAll();
-	}
+	
 
 	window.onkeydown = function(e) {
 		var key = e.keyCode;
 		if (key === 37) {
-			// left arrow
+
+			ctrlParams.direction = 'left';
+			movement(true);
+
 		} else if (key === 38) {
-			// up arrow
+
+			ctrlParams.direction = 'top';
+			movement(true);
+
 		} else if (key === 39) {
-			// right arrow
+
+			ctrlParams.direction = 'left';
+			movement(true);
+
 		} else if (key === 40) {
-			// down arrow
+
+			ctrlParams.direction = 'top';
+			movement(true);
 		}
 
+
 	};
+
+	function movement() {
+		if (act) {
+			var ctrlParams.isMoving = setInterval(function() {
+				var curntPos = objArray[0].getLeft();
+				objArray[0].setLeft(curntPos - 5).setAngle(90).setCoords();
+				canvas.renderAll();
+			}, 50);
+		};
+	}
+
+	/*
+	window.onkeyup = function(e) {
+		var key = e.keyCode;
+		if (key === 37) {
+
+			
+
+		} else if (key === 38) {
+
+			setTimeout(function() {
+				var curntPos = objArray[0].getTop();
+				objArray[0].setTop(curntPos - 5).setAngle(0).setCoords();
+				canvas.renderAll();
+			}, 50);
+
+
+		} else if (key === 39) {
+
+			setTimeout(function() {
+				var curntPos = objArray[0].getLeft();
+				objArray[0].setLeft(curntPos + 5).setAngle(90).setCoords();
+				canvas.renderAll();
+			}, 50);
+
+			// right arrow
+		} else if (key === 40) {
+
+			setTimeout(function() {
+				var curntPos = objArray[0].getTop();
+				objArray[0].setTop(curntPos + 5).setAngle(0).setCoords();
+				canvas.renderAll();
+			}, 50);
+
+		}
+
+	};*/
+
+
 
 });
