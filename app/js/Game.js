@@ -3,7 +3,10 @@ var Game = function() {
 	// Clients and bots
 	self.clients = [];
 	self.bots = [];
-	self.botStart = [18, 282, 582];
+	self.botStart = [20, 282, 575];
+
+	//Random angles
+	self.rdAngArr = [0, 90, 180, 270];
 
 	// Cnvas 
 	self.canvas = new fabric.Canvas('playRoomField');
@@ -14,6 +17,15 @@ var Game = function() {
 		speed: 5,
 		isMoving: false,
 		fps: 25,
+		interval: null,
+		angle: 0,
+		score: 0
+	};
+	self.ctrlBot = {
+		type: 1,
+		speed: 4,
+		isMoving: false,
+		fps: 75,
 		interval: null,
 		angle: 0,
 		score: 0
@@ -56,6 +68,7 @@ var Game = function() {
 		var pos = self.botStart.slice(0).sort(function() {
 			return Math.random() > 0.5;
 		}).shift();
+		var angle = self.rdAng();
 
 		console.log(pos);
 
@@ -64,7 +77,7 @@ var Game = function() {
 				left: pos,
 				top: 24,
 				width: 36,
-				angle: 180,
+				angle: angle,
 				height: 48,
 				selectable: false,
 				clipTo: function(ctx) {
@@ -77,7 +90,7 @@ var Game = function() {
 			callback({
 				'clientName': name,
 				bot: img,
-				ctrl: self.ctrlParams
+				ctrl: self.ctrlBot
 			});
 
 		});
@@ -85,6 +98,28 @@ var Game = function() {
 
 	self.getCanvas = function() {
 		return this.canvas;
+	};
+	self.rdAng = function(not) {
+
+		var self = this;
+
+		// Get array of posible angles
+		var arr = self.rdAngArr.slice(0);
+
+		// Cut undesirable angle
+		if (not != undefined) {
+
+			for (var i in arr) {
+				if (arr[i] === not) {
+					arr.splice(i, 1);
+				}
+			}
+		};
+
+		//Return random angle
+		return arr.sort(function() {
+			return Math.random() > 0.5
+		})[0];
 	};
 
 	self.initClient = function() {
@@ -118,17 +153,3 @@ var Game = function() {
 		objArray.push(rect);
 	}
 }
-
-
-
-Game.prototype.move = function(pos) {
-	var self = this;
-
-	setTimeout(function() {
-		self.move(pos + self.tankSpeed, true);
-	}, self.fps);
-}
-
-var Map = function(args) {
-
-};
