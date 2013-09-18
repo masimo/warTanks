@@ -1,3 +1,5 @@
+"use strict"
+
 function BotEngin(bot, canvas, bots, clients) {
 	var self = this;
 
@@ -5,6 +7,7 @@ function BotEngin(bot, canvas, bots, clients) {
 	self.bot = bot.bot;
 	self.ctrl = bot.ctrl;
 
+	
 	//Global objects using for colision
 	self.clients = clients;
 	self.bots = bots;
@@ -15,7 +18,7 @@ function BotEngin(bot, canvas, bots, clients) {
 	//Random angles
 	self.rdAngArr = [0, 90, 180, 270];
 
-	botGo = setInterval(function() {
+	var botGo = setInterval(function() {
 
 		// Chosse direction
 		var direc = Math.random();
@@ -48,21 +51,21 @@ function BotEngin(bot, canvas, bots, clients) {
 			//Calculate top position of obj
 			top = angle < 180 ? top - self.ctrl.speed : top + self.ctrl.speed;
 
-			if (self.checkCollision(top)) {
+			/*if (collision.checkCollision(left, top, self.bot)) {
 				top = topOld;
 				angle = self.rdAng(angle);
 
-			};
+			};*/
 		} else {
 
 			//Calculate left position of obj
 			left = angle < 180 ? left + self.ctrl.speed : left - self.ctrl.speed;
 
-			if (self.checkCollision(left)) {
+			/*if (collision.checkCollision(left, top, self.bot)) {
 				left = leftOld;
 				angle = self.rdAng(angle);
 
-			};
+			};*/
 		}
 
 		self.bot.set({
@@ -97,48 +100,6 @@ function BotEngin(bot, canvas, bots, clients) {
 			return Math.random() > 0.5
 		})[0];
 	};
-
-	//Check for collision
-	self.checkCollision = function(newPos) {
-		var collision = false;
-
-		var objHeight = self.bot.getHeight();
-
-
-		if (newPos + objHeight / 2 >= canvHeight || 0 > newPos - objHeight / 2 ||
-			newPos + objHeight / 2 >= canvWidth) {
-
-			collision = true;
-		}
-
-		self.bots.forEach(function(value) {
-
-			if (self.bot === value.bot) {return false};
-
-			var left = value.bot.getLeft(),
-				top = value.bot.getTop(),
-				angle = value.bot.getAngle(),
-				width = value.bot.getWidth(),
-				height = value.bot.getHeight();
-
-			if (angle === 180 || angle === 0) {
-				if (top - height / 2 < newPos && newPos < top + height / 2) {
-					collision = true;
-				};
-
-			} else if (angle === 270 || angle === 90) {
-
-				if (left - height / 2 < newPos && newPos < top + height / 2) {
-					collision = true;
-				};
-
-			};
-
-		});
-
-		return collision;
-
-	}
 
 
 }

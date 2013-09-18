@@ -3,12 +3,11 @@
 app.controller('playRoomController', function NormalModeController($scope, $filter) {
 
 	var gamePlay = new Game();
-	var clients = [];
-	var bots = [];
-	var botsCons = [];
-	var index = 0;
-	var oldKey = '';
-	$scope.clientTop = 575;
+	var clients = [],
+		bots = [],
+		index = 0;
+
+
 
 	window.onkeydown = function(e) {
 		var key = e.keyCode;
@@ -58,11 +57,23 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 
 				bots.push(bot);
 
+
+					// Update objects for checking for collision
+				collision.updateCollection({
+					'bots': bots,
+					'clients': clients
+				}, canvas);
+
+
+
 				new BotEngin(bot, canvas, bots, clients);
+
 
 
 			});
 		};
+
+
 
 	};
 
@@ -87,9 +98,9 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 		ctrls.interval = setInterval(function() {
 
 			//get top position
-			var top = clients[index].client.getTop(),
-				left = clients[index].client.getLeft(),
-				objHeight = clients[index].client.getHeight(),
+			var top = clients[index].bot.getTop(),
+				left = clients[index].bot.getLeft(),
+				objHeight = clients[index].bot.getHeight(),
 				topOld = top,
 				leftOld = left;
 
@@ -98,7 +109,7 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 				//Calculate top position of obj
 				top = ctrls.angle < 180 ? top - ctrls.speed : top + ctrls.speed;
 
-				if (top + objHeight / 2 >= canvHeight || top - objHeight / 2 <= 0) {
+				if (collision.checkCollision(top, left, clients[index].bot)) {
 					top = topOld;
 				};
 
@@ -107,13 +118,14 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 				//Calculate left position of obj
 				left = ctrls.angle < 180 ? left + ctrls.speed : left - ctrls.speed;
 
-				if (left + objHeight / 2 >= canvWidth || left - objHeight / 2 <= 0) {
+				if (collision.checkCollision(top, left, clients[index].bot)) {
 					left = leftOld;
 				};
 
 			};
 
-			clients[index].client.set({
+			//Change object properties
+			clients[index].bot.set({
 				top: top,
 				left: left,
 				angle: ctrls.angle

@@ -1,3 +1,4 @@
+"use strict"
 var Game = function() {
 	var self = this;
 	// Clients and bots
@@ -53,7 +54,7 @@ var Game = function() {
 
 			callback({
 				'clientName': name,
-				client: img,
+				bot: img,
 				ctrl: self.ctrlParams
 			});
 
@@ -122,34 +123,5 @@ var Game = function() {
 		})[0];
 	};
 
-	self.initClient = function() {
-		var canvas = new fabric.Canvas('playRoomField');
 
-
-		fabric.Image.fromURL('../lib/pug.jpg', function(img) {
-
-			canvas.add(img.set({
-				left: 250,
-				top: 250,
-				angle: 30
-			}).scale(0.25));
-
-
-		});
-
-		var rect = new fabric.Rect({
-			left: 300,
-			top: 550,
-			width: 75,
-			height: 100,
-			fill: 'green',
-			angle: 0,
-			padding: 10,
-			selectable: false
-		});
-
-		canvas.add(rect);
-
-		objArray.push(rect);
-	}
 }
