@@ -22,7 +22,7 @@ var Game = function() {
 	self.ctrlParams = {
 		type: 1,
 		speed: 5,
-		bulletSpeed: 15,
+		bulletSpeed: 8,
 		bulletInterval: null,
 		isMoving: false,
 		fps: 25,
@@ -396,7 +396,7 @@ var Game = function() {
 				//Calculate top position of obj
 				blt.top = angle < 180 ? blt.top - target.ctrl.bulletSpeed : blt.top + target.ctrl.bulletSpeed;
 
-				if (self.checkTarget(left, top, blt, target)) {
+				if (self.checkTarget(blt.left, blt.top, blt, target)) {
 					
 				};
 
@@ -405,7 +405,7 @@ var Game = function() {
 				//Calculate left position of obj
 				blt.left = angle < 180 ? blt.left + target.ctrl.bulletSpeed : blt.left - target.ctrl.bulletSpeed;
 
-				if (self.checkTarget(left, top, blt, target)) {
+				if (self.checkTarget(blt.left, blt.top, blt, target)) {
 
 				};
 
