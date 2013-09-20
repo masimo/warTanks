@@ -7,7 +7,7 @@ function BotEngin(bot, canvas, bots, clients) {
 	self.bot = bot.bot;
 	self.ctrl = bot.ctrl;
 
-	
+
 	//Global objects using for colision
 	self.clients = clients;
 	self.bots = bots;
@@ -78,6 +78,8 @@ function BotEngin(bot, canvas, bots, clients) {
 
 	}, self.ctrl.fps);
 
+
+	//Random value from array
 	self.rdAng = function(not) {
 
 		var self = this;
@@ -85,7 +87,7 @@ function BotEngin(bot, canvas, bots, clients) {
 		// Get array of posible angles
 		var arr = self.rdAngArr.slice(0);
 
-		// Cut undesirable angle
+		// Cut undesirable value from array (angle)
 		if (not != undefined) {
 
 			for (var i in arr) {
@@ -95,7 +97,7 @@ function BotEngin(bot, canvas, bots, clients) {
 			}
 		};
 
-		//Return random angle
+		//Return random value (angle)
 		return arr.sort(function() {
 			return Math.random() > 0.5
 		})[0];

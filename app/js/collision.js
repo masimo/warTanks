@@ -18,9 +18,17 @@
 
    extending: function(destination, source) {
 
-     for (var property in source)
-       destination[property] = source[property];
+     for (var property in source) {
+       if (source[property] && source[property].constructor &&
+         source[property].constructor === Object) {
+         destination[property] = destination[property] || {};
+         arguments.callee(destination[property], source[property]);
+       } else {
+         destination[property] = source[property];
+       }
+     }
      return destination;
+
    },
 
    //Check for collision
@@ -67,7 +75,7 @@
 
          if (hyp < dist) {
            collision = true;
-           console.log('bum');
+           console.log('boom');
          }
 
        });
