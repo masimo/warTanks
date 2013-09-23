@@ -7,6 +7,10 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 		clients: [],
 		bots: []
 	}
+	
+	$scope.bots = objCollection.bots;
+
+	var botCount = 20;
 
 	//Asign data to game constructor
 	gamePlay.setCollection(objCollection);
@@ -24,23 +28,28 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 
 		for (var i = 0, len = 3; i < len; i++) {
 
-			gamePlay.botAdd(function(bot) {
+			addNewBot();
 
-				objCollection.bots.push(bot);
-
-				gamePlay.botEngin(bot);
-
-			});
 		};
-
-
 
 	};
 
-
-
 	hostCreate();
 
+	function addNewBot() {
 
+
+		gamePlay.botAdd(function(bot) {
+
+			objCollection.bots.push(bot);
+
+			gamePlay.botEngin(bot);
+
+			botCount--;
+
+		});
+	};
+
+	$scope.$watch('bots', addNewBot);
 
 });

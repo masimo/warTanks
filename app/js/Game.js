@@ -6,6 +6,8 @@ var Game = function() {
 	self.objCollection = {};
 	self.botStart = [20, 282, 575];
 
+	self.botCount = 20;
+
 	//Index of player
 	var index = 0;
 
@@ -23,6 +25,7 @@ var Game = function() {
 		type: 1,
 		speed: 5,
 		bulletSpeed: 8,
+		appearMode: true,
 		bulletInterval: null,
 		isMoving: false,
 		fps: 25,
@@ -34,6 +37,7 @@ var Game = function() {
 	self.ctrlBot = {
 		type: 2,
 		speed: 4,
+		appearMode: true,
 		bulletSpeed: 15,
 		isMoving: false,
 		fps: 75,
@@ -45,6 +49,8 @@ var Game = function() {
 	//User interaction 
 	window.onkeyup = function(e) {
 		var key = e.keyCode;
+
+		if (self.objCollection.clients[index] === undefined) return false;
 
 		var ctrl = self.objCollection.clients[index].ctrl;
 
@@ -75,6 +81,9 @@ var Game = function() {
 
 	window.onkeydown = function(e) {
 		var key = e.keyCode;
+
+		if (self.objCollection.clients[index] === undefined) return false;
+
 		var ctrl = self.objCollection.clients[index].ctrl
 
 		//Check if it move is moving
@@ -118,27 +127,31 @@ var Game = function() {
 		var name = name || 'defaultName';
 		var self = this;
 
-		fabric.Image.fromURL('./img/warTank1.png', function(img) {
-			img.set({
-				left: 200,
-				top: 575,
-				width: 36,
-				height: 48,
-				selectable: false,
-				clipTo: function(ctx) {
-					ctx.rect(-18, -24, 36, 48);
-				}
-			});
 
-			self.canvas.add(img);
+		var rect = new fabric.Rect({
+			left: 200,
+			top: 575,
+			width: 36,
+			height: 48,
+		});
+
+		self.canvas.add(rect);
+
+		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
+			rect.fill = new fabric.Pattern({
+				source: img,
+				repeat: 'no-repeat',
+				offsetX: 0
+			});
 
 			callback({
 				'clientName': name,
-				bot: img,
+				bot: rect,
 				ctrl: self.extend({}, self.ctrlParams)
 			});
 
 		});
+
 	};
 
 	//Create bot
@@ -153,28 +166,31 @@ var Game = function() {
 
 		console.log(pos);
 
-		fabric.Image.fromURL('./img/warTank2.png', function(img) {
-			img.set({
-				left: pos,
-				top: 24,
-				width: 36,
-				angle: angle,
-				height: 48,
-				selectable: false,
-				clipTo: function(ctx) {
-					ctx.rect(-18, -24, 36, 48);
-				}
-			});
+		var rect = new fabric.Rect({
+			left: pos,
+			top: 24,
+			width: 36,
+			height: 48,
+			angle: 180
+		});
 
-			self.canvas.add(img);
+		self.canvas.add(rect);
+
+		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
+			rect.fill = new fabric.Pattern({
+				source: img,
+				repeat: 'no-repeat',
+				offsetX: 0
+			});
 
 			callback({
 				'clientName': name,
-				bot: img,
+				bot: rect,
 				ctrl: self.extend({}, self.ctrlBot)
 			});
 
 		});
+
 	};
 
 	/*
@@ -199,7 +215,7 @@ var Game = function() {
 				//Calculate top position of obj
 				top = ctrl.angle < 180 ? top - ctrl.speed : top + ctrl.speed;
 
-				if (self.checkCollision(left, top, self.objCollection.clients[index].bot)) {
+				if (self.checkCollision(left, top, self.objCollection.clients[index])) {
 					top = topOld;
 				};
 
@@ -208,7 +224,7 @@ var Game = function() {
 				//Calculate left position of obj
 				left = ctrl.angle < 180 ? left + ctrl.speed : left - ctrl.speed;
 
-				if (self.checkCollision(left, top, self.objCollection.clients[index].bot)) {
+				if (self.checkCollision(left, top, self.objCollection.clients[index])) {
 					left = leftOld;
 				};
 
@@ -226,6 +242,139 @@ var Game = function() {
 		}, ctrl.fps);
 
 	}
+	self.botEngin = function(curentBut) {
+
+		var bot = curentBut.bot;
+		var ctrl = curentBut.ctrl;
+
+
+		ctrl.interval = setInterval(function() {
+
+			// Chosse direction
+			var direc = Math.random();
+
+
+			var objHeight = bot.getHeight();
+
+			//all about position
+			var left = bot.getLeft(),
+				top = bot.getTop(),
+				angle = bot.getAngle(),
+				leftOld = left,
+				topOld = top;
+
+			//choose shoot or not
+			var shoot = Math.random();
+
+			// if true get new angle
+			if (0.97 < direc) {
+				angle = self.rdAng();
+			};
+
+
+
+			//if true then shoot!
+			if (shoot > 0.99) {
+				self.shoot(curentBut);
+			};
+
+			if (angle === 0 || angle === 180) {
+
+				//Calculate top position of obj
+				top = angle < 180 ? top - ctrl.speed : top + ctrl.speed;
+
+				var collide = self.checkCollision(left, top, curentBut);
+
+				if (!collide && ctrl.appearMode) {
+					ctrl.appearMode = false;
+				}
+
+				if (collide && !ctrl.appearMode) {
+					top = topOld;
+					angle = self.rdAng(angle);
+				};
+
+			} else {
+
+				//Calculate left position of obj
+				left = angle < 180 ? left + ctrl.speed : left - ctrl.speed;
+
+				var collide = self.checkCollision(left, top, curentBut);
+
+				if (!collide && ctrl.appearMode) {
+					ctrl.appearMode = false;
+				}
+
+				if (collide && !ctrl.appearMode) {
+					left = leftOld;
+					angle = self.rdAng(angle);
+				};
+
+			}
+
+			bot.set({
+				top: top,
+				left: left,
+				angle: angle
+			});
+
+			self.canvas.renderAll();
+
+		}, ctrl.fps);
+
+	};
+
+	//Check for collision
+	self.checkCollision = function(_x2, _y2, activeBot) {
+
+		var self = this;
+
+		var collide = false;
+
+
+		var _size2 = activeBot.bot.getHeight() / 2;
+
+		if (_y2 + _size2 >= CANVAS_HEIGHT || 0 > _y2 - _size2 ||
+			_x2 + _size2 >= CANVAS_WIDTH || 0 > _x2 - _size2) {
+
+			return true;
+		}
+
+		for (var prop in self.objCollection) {
+
+
+
+			self.objCollection[prop].forEach(function(value) {
+
+
+				if (activeBot.bot === value.bot) {
+					return false
+				};
+
+				//Get dimentions of obj
+				var x1 = value.bot.getLeft(),
+					y1 = value.bot.getTop(),
+					size1 = value.bot.getHeight() / 2;
+
+				//Distanse
+				var dist = size1 + _size2 - 4;
+
+				var xDist = x1 - _x2;
+				var yDist = y1 - _y2;
+
+				var hyp = Math.sqrt((xDist * xDist) + (yDist * yDist));
+
+				if (hyp < dist) {
+
+					collide = true;
+				};
+			});
+
+		}
+
+		return collide;
+	};
+
 
 	self.getCanvas = function() {
 		return this.canvas;
@@ -251,127 +400,11 @@ var Game = function() {
 
 	};
 
-	//Check for collision
-	self.checkCollision = function(_x2, _y2, activeBot) {
 
-		var self = this;
-
-		var collide = false;
-
-
-		var _size2 = activeBot.getHeight() / 2;
-
-		if (_y2 + _size2 >= CANVAS_HEIGHT || 0 > _y2 - _size2 ||
-			_x2 + _size2 >= CANVAS_WIDTH || 0 > _x2 - _size2) {
-
-			return true;
-		}
-
-		for (var prop in self.objCollection) {
-
-
-
-			self.objCollection[prop].forEach(function(value) {
-
-
-				if (activeBot === value.bot) {
-					return false
-				};
-
-				//Get dimentions of obj
-				var x1 = value.bot.getLeft(),
-					y1 = value.bot.getTop(),
-					size1 = value.bot.getHeight() / 2;
-
-				//Distanse
-				var dist = size1 + _size2 - 4;
-
-				var xDist = x1 - _x2;
-				var yDist = y1 - _y2;
-
-				var hyp = Math.sqrt((xDist * xDist) + (yDist * yDist));
-
-				if (hyp < dist) {
-					collide = true;
-				}
-
-			});
-
-		}
-
-		return collide;
-
-	};
-
-
-	self.botEngin = function(curentBut) {
-
-		var bot = curentBut.bot;
-		var ctrl = curentBut.ctrl;
-
-		ctrl.interval = setInterval(function() {
-
-			// Chosse direction
-			var direc = Math.random();
-
-
-			var objHeight = bot.getHeight();
-
-			//all about position
-			var left = bot.getLeft(),
-				top = bot.getTop(),
-				angle = bot.getAngle(),
-				leftOld = left,
-				topOld = top;
-
-			//choose shoot or not
-			var shoot = Math.random();
-
-			// if true get new angle
-			if (0.97 < direc && direc < 1) {
-				angle = self.rdAng();
-			};
-
-			//if true then shoot!
-			if (shoot > 1) {
-				self.shoot(curentBut);
-			};
-
-			if (angle === 0 || angle === 180) {
-
-				//Calculate top position of obj
-				top = angle < 180 ? top - ctrl.speed : top + ctrl.speed;
-
-				if (self.checkCollision(left, top, bot)) {
-					top = topOld;
-					angle = self.rdAng(angle);
-
-				};
-			} else {
-
-				//Calculate left position of obj
-				left = angle < 180 ? left + ctrl.speed : left - ctrl.speed;
-
-				if (self.checkCollision(left, top, bot)) {
-					left = leftOld;
-					angle = self.rdAng(angle);
-
-				};
-			}
-
-			bot.set({
-				top: top,
-				left: left,
-				angle: angle
-			});
-
-			self.canvas.renderAll();
-
-		}, ctrl.fps);
-
-	};
 
 	self.shoot = function(target) {
+
+		if (target.ctrl.bulletInterval) return false;
 
 		var left = target.bot.getLeft(),
 			top = target.bot.getTop(),
@@ -391,13 +424,20 @@ var Game = function() {
 
 		target.ctrl.bulletInterval = setInterval(function() {
 
+
+
 			if (angle === 0 || angle === 180) {
 
 				//Calculate top position of obj
 				blt.top = angle < 180 ? blt.top - target.ctrl.bulletSpeed : blt.top + target.ctrl.bulletSpeed;
 
-				if (self.checkTarget(blt.left, blt.top, blt, target)) {
-					
+				var isHited = self.checkTarget(blt.left, blt.top, blt, target);
+
+				if (isHited && typeof isHited === 'object') {
+
+					// Delete obj from array with delay
+					self.explode(isHited);
+
 				};
 
 			} else {
@@ -405,38 +445,48 @@ var Game = function() {
 				//Calculate left position of obj
 				blt.left = angle < 180 ? blt.left + target.ctrl.bulletSpeed : blt.left - target.ctrl.bulletSpeed;
 
-				if (self.checkTarget(blt.left, blt.top, blt, target)) {
+				var isHited = self.checkTarget(blt.left, blt.top, blt, target);
 
+				if (isHited && typeof isHited === 'object') {
+
+					// Delete obj from array with delay
+					self.explode(isHited);
 				};
 
 			};
 
+			self.canvas.renderAll();
+
 		}, target.ctrl.fps);
-
-
 
 	};
 	self.checkTarget = function(_x2, _y2, blt, activeBot) {
 
 		var self = this;
 
+		var hited = false;
+
 		var _size2 = blt.getHeight() / 2;
 
 		if (0 > _y2 - _size2 || _y2 + _size2 >= CANVAS_HEIGHT ||
 			0 > _x2 - _size2 || _x2 + _size2 >= CANVAS_WIDTH) {
 
+			clearInterval(activeBot.ctrl.bulletInterval);
+			activeBot.ctrl.bulletInterval = null;
+
 			self.canvas.remove(blt);
+
+
 		}
 
 		for (var prop in self.objCollection) {
 
 
-
 			self.objCollection[prop].forEach(function(value, index) {
 
 
-				if (activeBot.bot === value.bot) {
-					return false
+				if (activeBot.bot === value.bot || value.ctrl.type === activeBot.ctrl.type) {
+					return false;
 				};
 
 				//Get dimentions of obj
@@ -454,45 +504,48 @@ var Game = function() {
 
 				if (hyp < dist) {
 
-					self.canvas.remove(blt);
-					self.canvas.remove(value.bot);
-					self.objCollection[prop].splice(index, 1);
-					clearInterval(activeBot.ctrl.bulletInterval);
-					clearInterval(activeBot.ctrl.interval);
-				}
+					hited = {
+						activeBot: activeBot,
+						collection: self.objCollection[prop],
+						value: value,
+						index: index,
+						blt: blt
+					}
+
+				};
 
 			});
 
-		}
+		};
 
-
+		return hited;
 
 	};
 
-	self.createBullet = function(callback) {
+	self.explode = function(boom) {
 
-		var self = this;
+		//remove bullet
+		self.canvas.remove(boom.blt);
 
-		fabric.Image.fromURL('./img/warTank1.png', function(img) {
-			img.set({
-				left: 200,
-				top: 575,
-				width: 36,
-				height: 48,
-				selectable: false,
-				clipTo: function(ctx) {
-					ctx.rect(-18, -24, 36, 48);
-				}
-			});
+		//if heat clear time intervals for move and bullet
+		clearInterval(boom.activeBot.ctrl.bulletInterval);
+		clearInterval(boom.value.ctrl.interval);
 
-			self.canvas.add(img);
+		boom.activeBot.ctrl.bulletInterval = null;
+		boom.value.ctrl.interval = null;
 
-			callback({
-				bollet: img,
-			});
+		//change bg of tank
+		boom.value.bot.fill.offsetX = -36;
 
-		});
+		//Delete item from array
+		boom.collection.splice(boom.index, 1);
 
+
+		var timer = setTimeout(function() {
+
+			self.canvas.remove(boom.value.bot);
+
+		}, 500);
 	}
 
 	self.rdAng = function(not) {
