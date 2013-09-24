@@ -6,6 +6,8 @@ var Game = function() {
 	self.objCollection = {};
 	self.botStart = [20, 282, 575];
 
+	self.isMoving = false;
+
 	self.botCount = 20;
 
 	//Index of player
@@ -21,318 +23,185 @@ var Game = function() {
 		CANVAS_HEIGHT = self.canvas.getHeight();
 
 	// Controls parametrs
-	self.ctrlParams = {
+	self.clientCtrl = {
 		type: 1,
-		speed: 5,
+		speed: 3,
 		bulletSpeed: 8,
 		appearMode: true,
 		bulletInterval: null,
 		isMoving: false,
-		fps: 25,
+		fps: 50,
 		interval: null,
 		angle: 0,
 		score: 0
 	};
 
-	self.ctrlBot = {
+	self.botCtrl = {
 		type: 2,
-		speed: 4,
+		speed: 1,
 		appearMode: true,
 		bulletSpeed: 15,
-		isMoving: false,
-		fps: 75,
+		isMoving: true,
+		fps: 50,
 		interval: null,
-		angle: 0,
+		angle: 180,
 		score: 0
 	};
+
+	self.bulletCtrl = {
+		type: 3,
+		speed: 5,
+		isMoving: true,
+		angle: 180
+	};
+
 
 	//User interaction 
 	window.onkeyup = function(e) {
 		var key = e.keyCode;
 
-		if (self.objCollection.clients[index] === undefined) return false;
+		var sctiveBot = self.objCollection.clients[index];
 
-		var ctrl = self.objCollection.clients[index].ctrl;
+		if (key >= 37 && key <= 40) {
 
+			// Switch move flag
+			sctiveBot.ctrl.isMoving = false;
 
-
-		// Switch move flag
-		ctrl.isMoving = false;
-
-		if (key === 37) {
-
-			clearInterval(ctrl.interval);
-
-		} else if (key === 38) {
-
-			clearInterval(ctrl.interval);
-
-
-		} else if (key === 39) {
-
-			clearInterval(ctrl.interval);
-
-		} else if (key === 40) {
-
-			clearInterval(ctrl.interval);
 		}
 
 	};
+
 
 	window.onkeydown = function(e) {
 		var key = e.keyCode;
 
-		if (self.objCollection.clients[index] === undefined) return false;
-
-		var ctrl = self.objCollection.clients[index].ctrl
+		var sctiveBot = self.objCollection.clients[index];
 
 		//Check if it move is moving
-		if (ctrl.isMoving) return false;
+		if (sctiveBot.ctrl.isMoving) return false;
 
 		//Check if arrow pressed
 		if (key === 37) {
-			ctrl.angle = 270;
-			self.move(ctrl);
 
+			sctiveBot.ctrl.angle = 270;
 		} else if (key === 38) {
 
-			ctrl.angle = 0;
-			self.move(ctrl);
-
+			sctiveBot.ctrl.angle = 0;
 		} else if (key === 39) {
 
-			ctrl.angle = 90;
-			self.move(ctrl);
-
+			sctiveBot.ctrl.angle = 90;
 		} else if (key === 40) {
 
-			ctrl.angle = 180;
-			self.move(ctrl);
-
+			sctiveBot.ctrl.angle = 180;
 		};
 
 		if (key === 32) {
 
-			self.shoot(self.objCollection.clients[index]);
+			//self.shoot(sctiveBot);
 		}
 
-		ctrl.isMoving = true;
-
+		sctiveBot.ctrl.isMoving = true;
 	};
 
-
-
-	//Init Clients
-	self.initObj = function(callback) {
-		var name = name || 'defaultName';
-		var self = this;
-
-
-		var rect = new fabric.Rect({
-			left: 200,
-			top: 575,
-			width: 36,
-			height: 48,
-		});
-
-		self.canvas.add(rect);
-
-		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
-			rect.fill = new fabric.Pattern({
-				source: img,
-				repeat: 'no-repeat',
-				offsetX: 0
-			});
-
-			callback({
-				'clientName': name,
-				bot: rect,
-				ctrl: self.extend({}, self.ctrlParams)
-			});
-
-		});
-
-	};
-
-	//Create bot
-	self.botAdd = function(callback) {
-		var name = name || 'bot';
-		var self = this;
-		var obj = {};
-		var pos = self.botStart.slice(0).sort(function() {
-			return Math.random() > 0.5;
-		}).shift();
-		var angle = self.rdAng();
-
-		console.log(pos);
-
-		var rect = new fabric.Rect({
-			left: pos,
-			top: 24,
-			width: 36,
-			height: 48,
-			angle: 180
-		});
-
-		self.canvas.add(rect);
-
-		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
-			rect.fill = new fabric.Pattern({
-				source: img,
-				repeat: 'no-repeat',
-				offsetX: 0
-			});
-
-			callback({
-				'clientName': name,
-				bot: rect,
-				ctrl: self.extend({}, self.ctrlBot)
-			});
-
-		});
-
-	};
 
 	/*
 	 *	Move client
 	 */
 
-	self.move = function(ctrl) {
 
+	self.update = function() {
 
-		ctrl.interval = setInterval(function() {
+		for (var prop in self.objCollection) {
 
-			//get top position
-			var top = self.objCollection.clients[index].bot.getTop(),
-				left = self.objCollection.clients[index].bot.getLeft(),
-				objHeight = self.objCollection.clients[index].bot.getHeight(),
-				topOld = top,
-				leftOld = left;
+			self.objCollection[prop].forEach(function(curentBot, i) {
 
-			//Chech the direction
-			if (ctrl.angle === 0 || ctrl.angle === 180) {
+				//If bot stoped skeep 
+				if (!curentBot.ctrl.isMoving) return false;
 
-				//Calculate top position of obj
-				top = ctrl.angle < 180 ? top - ctrl.speed : top + ctrl.speed;
+				var angle = curentBot.ctrl.angle,
+					left = curentBot.bot.left,
+					top = curentBot.bot.top,
+					topOld = top,
+					leftOld = left;
 
-				if (self.checkCollision(left, top, self.objCollection.clients[index])) {
-					top = topOld;
+				//Bots behave
+				if (curentBot.ctrl.type === 2) {
+
+					//if true change direction
+					if (0.01 > Math.random()) {
+						angle = curentBot.ctrl.angle = self.rdAng();
+					}
+
+					//if true then shoot!
+					if (0.01 > Math.random()) {
+
+						self.shoot(curentBot);
+						console.log(curentBot.clientName + ' shot')
+						//shoot
+					}
+
 				};
 
-			} else {
+				//Check the direction
+				if (angle === 0 || angle === 180) {
 
-				//Calculate left position of obj
-				left = ctrl.angle < 180 ? left + ctrl.speed : left - ctrl.speed;
+					//Calculate top position of obj
+					top = angle < 180 ? top - curentBot.ctrl.speed : top + curentBot.ctrl.speed;
 
-				if (self.checkCollision(left, top, self.objCollection.clients[index])) {
-					left = leftOld;
+					if (self.checkCollision(left, top, curentBot)) {
+						top = topOld;
+
+						//If  this bot change the ange
+						if (curentBot.ctrl.type === 2) {
+							curentBot.ctrl.angle = self.rdAng(angle);
+						};
+					};
+
+				} else {
+
+					//Calculate left position of obj
+					left = angle < 180 ? left + curentBot.ctrl.speed : left - curentBot.ctrl.speed;
+
+					if (self.checkCollision(left, top, curentBot)) {
+						left = leftOld;
+
+						//If  this bot change the ange
+						if (curentBot.ctrl.type === 2) {
+							curentBot.ctrl.angle = self.rdAng(angle);
+						};
+					};
+
 				};
 
-			};
+				curentBot.bot.set({
+					left: left,
+					top: top,
+					angle: curentBot.ctrl.angle
+				});
 
-			//Change object properties
-			self.objCollection.clients[index].bot.set({
-				top: top,
-				left: left,
-				angle: ctrl.angle
+
+				//Check if this is bullet
+				if (curentBot.ctrl.type === 3) {
+
+					//Check if bullet hit the target
+					self.checkTarget(left, top, curentBot);
+				};
+
 			});
-
-			self.canvas.renderAll();
-
-		}, ctrl.fps);
-
-	}
-	self.botEngin = function(curentBut) {
-
-		var bot = curentBut.bot;
-		var ctrl = curentBut.ctrl;
-
-
-		ctrl.interval = setInterval(function() {
-
-			// Chosse direction
-			var direc = Math.random();
-
-
-			var objHeight = bot.getHeight();
-
-			//all about position
-			var left = bot.getLeft(),
-				top = bot.getTop(),
-				angle = bot.getAngle(),
-				leftOld = left,
-				topOld = top;
-
-			//choose shoot or not
-			var shoot = Math.random();
-
-			// if true get new angle
-			if (0.97 < direc) {
-				angle = self.rdAng();
-			};
-
-
-
-			//if true then shoot!
-			if (shoot > 0.99) {
-				self.shoot(curentBut);
-			};
-
-			if (angle === 0 || angle === 180) {
-
-				//Calculate top position of obj
-				top = angle < 180 ? top - ctrl.speed : top + ctrl.speed;
-
-				var collide = self.checkCollision(left, top, curentBut);
-
-				if (!collide && ctrl.appearMode) {
-					ctrl.appearMode = false;
-				}
-
-				if (collide && !ctrl.appearMode) {
-					top = topOld;
-					angle = self.rdAng(angle);
-				};
-
-			} else {
-
-				//Calculate left position of obj
-				left = angle < 180 ? left + ctrl.speed : left - ctrl.speed;
-
-				var collide = self.checkCollision(left, top, curentBut);
-
-				if (!collide && ctrl.appearMode) {
-					ctrl.appearMode = false;
-				}
-
-				if (collide && !ctrl.appearMode) {
-					left = leftOld;
-					angle = self.rdAng(angle);
-				};
-
-			}
-
-			bot.set({
-				top: top,
-				left: left,
-				angle: angle
-			});
-
-			self.canvas.renderAll();
-
-		}, ctrl.fps);
+		}
 
 	};
 
+
 	//Check for collision
-	self.checkCollision = function(_x2, _y2, activeBot) {
+	self.checkCollision = function(_x2, _y2, curentBot) {
 
 		var self = this;
 
 		var collide = false;
 
 
-		var _size2 = activeBot.bot.getHeight() / 2;
+		var _size2 = curentBot.bot.getHeight() / 2;
 
 		if (_y2 + _size2 >= CANVAS_HEIGHT || 0 > _y2 - _size2 ||
 			_x2 + _size2 >= CANVAS_WIDTH || 0 > _x2 - _size2) {
@@ -346,8 +215,7 @@ var Game = function() {
 
 			self.objCollection[prop].forEach(function(value) {
 
-
-				if (activeBot.bot === value.bot) {
+				if (curentBot.bot === value.bot) {
 					return false
 				};
 
@@ -375,40 +243,15 @@ var Game = function() {
 		return collide;
 	};
 
-
-	self.getCanvas = function() {
-		return this.canvas;
-	};
+	self.shoot = function(curentBot) {
 
 
-	self.setCollection = function(obj) {
-		this.objCollection = obj;
-	};
+		var height = curentBot.bot.height;
 
-	self.extend = function(destination, source) {
+		var left = curentBot.bot.left,
+			top = curentBot.bot.top,
+			angle = curentBot.bot.angle;
 
-		for (var property in source) {
-			if (source[property] && source[property].constructor &&
-				source[property].constructor === Object) {
-				destination[property] = destination[property] || {};
-				arguments.callee(destination[property], source[property]);
-			} else {
-				destination[property] = source[property];
-			}
-		}
-		return destination;
-
-	};
-
-
-
-	self.shoot = function(target) {
-
-		if (target.ctrl.bulletInterval) return false;
-
-		var left = target.bot.getLeft(),
-			top = target.bot.getTop(),
-			angle = target.bot.getAngle();
 
 		var blt = new fabric.Rect({
 			left: left,
@@ -422,60 +265,31 @@ var Game = function() {
 
 		self.canvas.add(blt);
 
-		target.ctrl.bulletInterval = setInterval(function() {
-
-
-
-			if (angle === 0 || angle === 180) {
-
-				//Calculate top position of obj
-				blt.top = angle < 180 ? blt.top - target.ctrl.bulletSpeed : blt.top + target.ctrl.bulletSpeed;
-
-				var isHited = self.checkTarget(blt.left, blt.top, blt, target);
-
-				if (isHited && typeof isHited === 'object') {
-
-					// Delete obj from array with delay
-					self.explode(isHited);
-
-				};
-
-			} else {
-
-				//Calculate left position of obj
-				blt.left = angle < 180 ? blt.left + target.ctrl.bulletSpeed : blt.left - target.ctrl.bulletSpeed;
-
-				var isHited = self.checkTarget(blt.left, blt.top, blt, target);
-
-				if (isHited && typeof isHited === 'object') {
-
-					// Delete obj from array with delay
-					self.explode(isHited);
-				};
-
-			};
-
-			self.canvas.renderAll();
-
-		}, target.ctrl.fps);
-
+		self.objCollection.bullets.push({
+			'clientName': 'big boom',
+			bot: blt,
+			ctrl: self.extend({}, self.bulletCtrl)
+		});
 	};
-	self.checkTarget = function(_x2, _y2, blt, activeBot) {
 
-		var self = this;
+
+	self.checkTarget = function(_x2, _y2, curentBot) {
 
 		var hited = false;
 
-		var _size2 = blt.getHeight() / 2;
+		var _size2 = curentBot.bot.height / 2;
 
 		if (0 > _y2 - _size2 || _y2 + _size2 >= CANVAS_HEIGHT ||
 			0 > _x2 - _size2 || _x2 + _size2 >= CANVAS_WIDTH) {
 
-			clearInterval(activeBot.ctrl.bulletInterval);
-			activeBot.ctrl.bulletInterval = null;
+			//Out of area
 
-			self.canvas.remove(blt);
+			var arr = self.objCollection.bullets;
+			
+			self.canvas.remove(curentBot.bot);
+			arr.splice(indexOf(curentBot), 1);
 
+			return false
 
 		}
 
@@ -485,7 +299,7 @@ var Game = function() {
 			self.objCollection[prop].forEach(function(value, index) {
 
 
-				if (activeBot.bot === value.bot || value.ctrl.type === activeBot.ctrl.type) {
+				if (curentBot.bot === value.bot || value.ctrl.type === curentBot.ctrl.type || ) {
 					return false;
 				};
 
@@ -505,7 +319,7 @@ var Game = function() {
 				if (hyp < dist) {
 
 					hited = {
-						activeBot: activeBot,
+						curentBot: curentBot,
 						collection: self.objCollection[prop],
 						value: value,
 						index: index,
@@ -547,6 +361,38 @@ var Game = function() {
 
 		}, 500);
 	}
+
+	self.getCanvas = function() {
+		return this.canvas;
+	};
+
+	self.getBotCtrl = function() {
+		return self.botCtrl;
+	};
+
+	self.getClientCtrl = function() {
+		return self.clientCtrl;
+	};
+
+
+	self.setCollection = function(obj) {
+		this.objCollection = obj;
+	};
+
+	self.extend = function(destination, source) {
+
+		for (var property in source) {
+			if (source[property] && source[property].constructor &&
+				source[property].constructor === Object) {
+				destination[property] = destination[property] || {};
+				arguments.callee(destination[property], source[property]);
+			} else {
+				destination[property] = source[property];
+			}
+		}
+		return destination;
+
+	};
 
 	self.rdAng = function(not) {
 
