@@ -1,3 +1,6 @@
 
 <input type="range" max="575" min="25" value="575" data-ng-model='clientTop' placeholder="Position left">
 <canvas id="playRoomField" height="600" width="600"></canvas>
+{{botCounter}}
+
+<button type="button" ng-click="botCounter=botCounter-1" ng-disabled="botCounter==0">Add new one</button>

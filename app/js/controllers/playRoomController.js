@@ -7,8 +7,7 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 
 	var objCollection = {
 		clients: [],
-		bots: [],
-		bullets: []
+		bots: []
 	}
 
 	//Arrays of random data
@@ -18,7 +17,9 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 		names: ['Boris', 'Den', 'Lyolik', 'Bolik']
 	}
 
+	$scope.botCounter = 20;
 
+	
 
 	//Asign data to game constructor
 	gamePlay.setCollection(objCollection);
@@ -67,7 +68,7 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 			objCollection.clients.push({
 				'clientName': name,
 				bot: rect,
-				blt: [],
+				blt: null,
 				ctrl: gamePlay.extend({}, gamePlay.getClientCtrl())
 			});
 
@@ -78,11 +79,11 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 	//Create bot
 
 	function initBot() {
-		var name = rdData.names.sort(function() {
+		var name = rdData.names.slice(0).sort(function() {
 			return Math.random() > 0.5;
 		}).shift();
 
-		var pos = rdData.startPosition.sort(function() {
+		var pos = rdData.startPosition.slice(0).sort(function() {
 			return Math.random() > 0.5;
 		}).shift();
 
@@ -111,7 +112,7 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 			objCollection.bots.push({
 				'clientName': name,
 				bot: rect,
-				blt: [],
+				blt: null,
 				ctrl: gamePlay.extend({}, gamePlay.getBotCtrl())
 			});
 
@@ -157,6 +158,16 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 		gamePlay.update();
 
 		canvas.renderAll();
+	});
+
+
+	$scope.$watch('botCounter', function() {
+
+		//If true then add new bot
+		if ($scope.botCounter > 0) {
+			
+			initBot();
+		};
 	});
 
 

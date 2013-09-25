@@ -11,7 +11,7 @@ var Game = function() {
 	self.botCount = 20;
 
 	//Index of player
-	var index = 0;
+	var clientIndex = 0;
 
 	//Random angles
 	self.rdAngArr = [0, 90, 180, 270];
@@ -30,7 +30,7 @@ var Game = function() {
 		appearMode: true,
 		bulletInterval: null,
 		isMoving: false,
-		fps: 50,
+		isShoot: false,
 		interval: null,
 		angle: 0,
 		score: 0
@@ -42,7 +42,7 @@ var Game = function() {
 		appearMode: true,
 		bulletSpeed: 15,
 		isMoving: true,
-		fps: 50,
+		isShoot: false,
 		interval: null,
 		angle: 180,
 		score: 0
@@ -60,12 +60,12 @@ var Game = function() {
 	window.onkeyup = function(e) {
 		var key = e.keyCode;
 
-		var sctiveBot = self.objCollection.clients[index];
+		var curentBot = self.objCollection.clients[clientIndex];
 
 		if (key >= 37 && key <= 40) {
 
 			// Switch move flag
-			sctiveBot.ctrl.isMoving = false;
+			curentBot.ctrl.isMoving = false;
 
 		}
 
@@ -75,32 +75,38 @@ var Game = function() {
 	window.onkeydown = function(e) {
 		var key = e.keyCode;
 
-		var sctiveBot = self.objCollection.clients[index];
+		var curentBot = self.objCollection.clients[clientIndex];
 
 		//Check if it move is moving
-		if (sctiveBot.ctrl.isMoving) return false;
+		if (curentBot.ctrl.isMoving) return false;
 
 		//Check if arrow pressed
 		if (key === 37) {
 
-			sctiveBot.ctrl.angle = 270;
+			curentBot.ctrl.isMoving = true;
+			curentBot.ctrl.angle = 270;
 		} else if (key === 38) {
 
-			sctiveBot.ctrl.angle = 0;
+			curentBot.ctrl.isMoving = true;
+			curentBot.ctrl.angle = 0;
 		} else if (key === 39) {
 
-			sctiveBot.ctrl.angle = 90;
+			curentBot.ctrl.isMoving = true;
+			curentBot.ctrl.angle = 90;
 		} else if (key === 40) {
 
-			sctiveBot.ctrl.angle = 180;
+			curentBot.ctrl.isMoving = true;
+			curentBot.ctrl.angle = 180;
 		};
 
-		if (key === 32) {
+		if (key === 32 && !curentBot.ctrl.isShoot) {
 
-			//self.shoot(sctiveBot);
+			self.shoot(curentBot);
+			curentBot.ctrl.isShoot = true;
+			//self.shoot(curentBot);
 		}
 
-		sctiveBot.ctrl.isMoving = true;
+
 	};
 
 
@@ -115,7 +121,13 @@ var Game = function() {
 
 			self.objCollection[prop].forEach(function(curentBot, i) {
 
-				//If bot stoped skeep 
+
+				if (curentBot.ctrl.isShoot) {
+
+					self.updateBullet(curentBot);
+				};
+
+				//If bot stoped, then skeep 
 				if (!curentBot.ctrl.isMoving) return false;
 
 				var angle = curentBot.ctrl.angle,
@@ -133,10 +145,12 @@ var Game = function() {
 					}
 
 					//if true then shoot!
-					if (0.01 > Math.random()) {
+					if (0.01 > Math.random() && !curentBot.ctrl.isShoot) {
 
 						self.shoot(curentBot);
-						console.log(curentBot.clientName + ' shot')
+						curentBot.ctrl.isShoot = true;
+
+						console.log(curentBot.clientName + ' shot');
 						//shoot
 					}
 
@@ -148,7 +162,16 @@ var Game = function() {
 					//Calculate top position of obj
 					top = angle < 180 ? top - curentBot.ctrl.speed : top + curentBot.ctrl.speed;
 
-					if (self.checkCollision(left, top, curentBot)) {
+					var collide = self.checkCollision(left, top, curentBot);
+
+
+					if (!collide && curentBot.ctrl.appearMode) {
+						curentBot.ctrl.appearMode = false;
+					};
+
+					//Check also if it just apper on map
+					if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
+
 						top = topOld;
 
 						//If  this bot change the ange
@@ -162,7 +185,15 @@ var Game = function() {
 					//Calculate left position of obj
 					left = angle < 180 ? left + curentBot.ctrl.speed : left - curentBot.ctrl.speed;
 
-					if (self.checkCollision(left, top, curentBot)) {
+					var collide = self.checkCollision(left, top, curentBot);
+
+					if (!collide && curentBot.ctrl.appearMode) {
+						curentBot.ctrl.appearMode = false;
+					};
+
+					//Check also if it just apper on map
+					if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
+
 						left = leftOld;
 
 						//If  this bot change the ange
@@ -173,6 +204,7 @@ var Game = function() {
 
 				};
 
+
 				curentBot.bot.set({
 					left: left,
 					top: top,
@@ -180,25 +212,59 @@ var Game = function() {
 				});
 
 
-				//Check if this is bullet
-				if (curentBot.ctrl.type === 3) {
-
-					//Check if bullet hit the target
-					self.checkTarget(left, top, curentBot);
-				};
-
 			});
 		}
 
 	};
 
+	self.updateBullet = function(curentBot) {
+
+		var angle = curentBot.blt.ctrl.angle = curentBot.blt.bullet.angle,
+			left = curentBot.blt.bullet.left,
+			top = curentBot.blt.bullet.top;
+
+
+		//Check the direction
+		if (angle === 0 || angle === 180) {
+
+			//Calculate top position of obj
+			top = angle < 180 ? top - curentBot.blt.ctrl.speed : top + curentBot.blt.ctrl.speed;
+
+			if (self.checkTarget(left, top, curentBot)) {
+
+				curentBot.ctrl.score++;
+			};
+
+		} else {
+
+			//Calculate left position of obj
+			left = angle < 180 ? left + curentBot.blt.ctrl.speed : left - curentBot.blt.ctrl.speed;
+
+			if (self.checkTarget(left, top, curentBot)) {
+
+				curentBot.ctrl.score++;
+			};
+
+		};
+
+		//if bullet was deleted 
+		if (curentBot.blt !== null) {
+
+			curentBot.blt.bullet.set({
+				left: left,
+				top: top
+			});
+
+		};
+
+
+
+	};
 
 	//Check for collision
 	self.checkCollision = function(_x2, _y2, curentBot) {
 
-		var self = this;
-
-		var collide = false;
+		var collision = false;
 
 
 		var _size2 = curentBot.bot.getHeight() / 2;
@@ -206,12 +272,12 @@ var Game = function() {
 		if (_y2 + _size2 >= CANVAS_HEIGHT || 0 > _y2 - _size2 ||
 			_x2 + _size2 >= CANVAS_WIDTH || 0 > _x2 - _size2) {
 
-			return true;
+			return {
+				type: 1
+			};
 		}
 
 		for (var prop in self.objCollection) {
-
-
 
 			self.objCollection[prop].forEach(function(value) {
 
@@ -234,19 +300,19 @@ var Game = function() {
 
 				if (hyp < dist) {
 
-					collide = true;
+					collision = {
+						type: 2
+					};
 				};
 			});
 
 		}
 
-		return collide;
+		return collision;
 	};
 
 	self.shoot = function(curentBot) {
 
-
-		var height = curentBot.bot.height;
 
 		var left = curentBot.bot.left,
 			top = curentBot.bot.top,
@@ -265,29 +331,29 @@ var Game = function() {
 
 		self.canvas.add(blt);
 
-		self.objCollection.bullets.push({
-			'clientName': 'big boom',
-			bot: blt,
+		//Change default angle of model
+		self.bulletCtrl.angle = angle;
+
+		curentBot.blt = {
+			bullet: blt,
 			ctrl: self.extend({}, self.bulletCtrl)
-		});
+		};
 	};
 
 
 	self.checkTarget = function(_x2, _y2, curentBot) {
 
-		var hited = false;
 
-		var _size2 = curentBot.bot.height / 2;
+		var _size2 = curentBot.blt.bullet.height / 2;
 
 		if (0 > _y2 - _size2 || _y2 + _size2 >= CANVAS_HEIGHT ||
 			0 > _x2 - _size2 || _x2 + _size2 >= CANVAS_WIDTH) {
 
 			//Out of area
 
-			var arr = self.objCollection.bullets;
-			
-			self.canvas.remove(curentBot.bot);
-			arr.splice(indexOf(curentBot), 1);
+			self.canvas.remove(curentBot.blt.bullet);
+			curentBot.blt = null;
+			curentBot.ctrl.isShoot = false;
 
 			return false
 
@@ -295,18 +361,17 @@ var Game = function() {
 
 		for (var prop in self.objCollection) {
 
-
 			self.objCollection[prop].forEach(function(value, index) {
 
-
-				if (curentBot.bot === value.bot || value.ctrl.type === curentBot.ctrl.type || ) {
+				if (curentBot.bot === value.bot ||
+					value.ctrl.type === curentBot.ctrl.type) {
 					return false;
 				};
 
 				//Get dimentions of obj
-				var x1 = value.bot.getLeft(),
-					y1 = value.bot.getTop(),
-					size1 = value.bot.getHeight() / 2;
+				var x1 = value.bot.left,
+					y1 = value.bot.top,
+					size1 = value.bot.height / 2;
 
 				//Distanse
 				var dist = size1 + _size2 - 4;
@@ -318,13 +383,13 @@ var Game = function() {
 
 				if (hyp < dist) {
 
-					hited = {
-						curentBot: curentBot,
-						collection: self.objCollection[prop],
-						value: value,
-						index: index,
-						blt: blt
-					}
+					self.explode(value, self.objCollection[prop], index);
+
+					self.canvas.remove(curentBot.blt.bullet);
+					curentBot.blt = null;
+					curentBot.ctrl.isShoot = false;
+
+					return true;
 
 				};
 
@@ -332,35 +397,39 @@ var Game = function() {
 
 		};
 
-		return hited;
+		return false;
 
 	};
 
-	self.explode = function(boom) {
-
-		//remove bullet
-		self.canvas.remove(boom.blt);
-
-		//if heat clear time intervals for move and bullet
-		clearInterval(boom.activeBot.ctrl.bulletInterval);
-		clearInterval(boom.value.ctrl.interval);
-
-		boom.activeBot.ctrl.bulletInterval = null;
-		boom.value.ctrl.interval = null;
+	self.explode = function(crashedBot, collection, index) {
 
 		//change bg of tank
-		boom.value.bot.fill.offsetX = -36;
+		crashedBot.bot.fill.offsetX = -36;
 
 		//Delete item from array
-		boom.collection.splice(boom.index, 1);
+		if (crashedBot.ctrl.isShoot) {
 
+			crashedBot.ctrl.isMoving = false;
 
+			var timer = setTimeout(function() {
+
+				if (crashedBot.blt !== null) {
+					self.canvas.remove(crashedBot.blt.bullet);
+				}
+
+				collection.splice(index, 1);
+			}, 1000);
+		} else {
+			collection.splice(index, 1);
+		};
+
+		//Delete object from canvas withe some delay
 		var timer = setTimeout(function() {
 
-			self.canvas.remove(boom.value.bot);
-
+			self.canvas.remove(crashedBot.bot);
 		}, 500);
-	}
+
+	};
 
 	self.getCanvas = function() {
 		return this.canvas;
