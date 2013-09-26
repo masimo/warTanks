@@ -3,3 +3,31 @@
 	margin: auto;
 	border: 1px solid #BEBEBE;
 }
+.canvas_wrap{
+	position: relative;
+	width: 600px;
+	height: 600px;
+	display: block;
+	
+}
+.info{
+	width: 190px;
+	float: right;
+}
+div.center_wrap{
+	width: 800px;
+	margin: auto;
+}
+.body_wrap{
+	
+}
+.select_host{
+	width: 250px;
+}
+.game_list{
+		
+}
+.left_column{
+	float: left;
+	width: 250px;
+}

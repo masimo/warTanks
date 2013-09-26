@@ -1,5 +1,5 @@
 "use strict"
-var Game = function() {
+var Game = function($scope) {
 	var self = this;
 
 	// Clients and bots
@@ -150,7 +150,6 @@ var Game = function() {
 						self.shoot(curentBot);
 						curentBot.ctrl.isShoot = true;
 
-						console.log(curentBot.clientName + ' shot');
 						//shoot
 					}
 
@@ -214,6 +213,93 @@ var Game = function() {
 
 			});
 		}
+
+	};
+
+	self.updateClient = function() {
+		
+
+			self.objCollection.clients.forEach(function(curentBot, i) {
+
+
+				if (curentBot.ctrl.isShoot) {
+
+					self.updateBullet(curentBot);
+				};
+
+				//Bots behave
+				if (curentBot.ctrl.type === 2) return false;
+
+				//If bot stoped, then skeep 
+				if (!curentBot.ctrl.isMoving) return false;
+
+
+				var angle = curentBot.ctrl.angle,
+					left = curentBot.bot.left,
+					top = curentBot.bot.top,
+					topOld = top,
+					leftOld = left;
+
+				
+
+				//Check the direction
+				if (angle === 0 || angle === 180) {
+
+					//Calculate top position of obj
+					top = angle < 180 ? top - curentBot.ctrl.speed : top + curentBot.ctrl.speed;
+
+					var collide = self.checkCollision(left, top, curentBot);
+
+
+					if (!collide && curentBot.ctrl.appearMode) {
+						curentBot.ctrl.appearMode = false;
+					};
+
+					//Check also if it just apper on map
+					if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
+
+						top = topOld;
+
+						//If  this bot change the ange
+						if (curentBot.ctrl.type === 2) {
+							curentBot.ctrl.angle = self.rdAng(angle);
+						};
+					};
+
+				} else {
+
+					//Calculate left position of obj
+					left = angle < 180 ? left + curentBot.ctrl.speed : left - curentBot.ctrl.speed;
+
+					var collide = self.checkCollision(left, top, curentBot);
+
+					if (!collide && curentBot.ctrl.appearMode) {
+						curentBot.ctrl.appearMode = false;
+					};
+
+					//Check also if it just apper on map
+					if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
+
+						left = leftOld;
+
+						//If  this bot change the ange
+						if (curentBot.ctrl.type === 2) {
+							curentBot.ctrl.angle = self.rdAng(angle);
+						};
+					};
+
+				};
+
+
+				curentBot.bot.set({
+					left: left,
+					top: top,
+					angle: curentBot.ctrl.angle
+				});
+
+
+			});
+		
 
 	};
 
@@ -286,9 +372,9 @@ var Game = function() {
 				};
 
 				//Get dimentions of obj
-				var x1 = value.bot.getLeft(),
-					y1 = value.bot.getTop(),
-					size1 = value.bot.getHeight() / 2;
+				var x1 = value.bot.left,
+					y1 = value.bot.top,
+					size1 = value.bot.height / 2;
 
 				//Distanse
 				var dist = size1 + _size2 - 4;
@@ -385,6 +471,10 @@ var Game = function() {
 
 					self.explode(value, self.objCollection[prop], index);
 
+					if (curentBot.ctrl.type == 1) {
+						$scope.score = curentBot.ctrl.score += 1;
+					}
+
 					self.canvas.remove(curentBot.blt.bullet);
 					curentBot.blt = null;
 					curentBot.ctrl.isShoot = false;
@@ -427,6 +517,9 @@ var Game = function() {
 		var timer = setTimeout(function() {
 
 			self.canvas.remove(crashedBot.bot);
+
+			$scope.botCounterAdd();
+
 		}, 500);
 
 	};

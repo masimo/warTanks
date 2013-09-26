@@ -1,47 +1,51 @@
-var canvas = new fabric.Canvas('playRoomField');
+  window.WebSocket = window.WebSocket || window.MozWebSocket;
 
-var rect = new fabric.Rect({
-  left: 100,
-  top: 100,
-  width: 100,
-  height: 100,
-  fill: 'green',
-  angle: 20,
-  padding: 10
-});
-canvas.add(rect);
+  // if browser doesn't support WebSocket, just show some notification and exit
+  if (!window.WebSocket) {
+    console.log('Sory doesnt work');
 
-fabric.loadSVGFromURL('../../img/pengu.svg', function(objects, options) {
+  };
 
-  var shape = fabric.util.groupSVGElements(objects, options);
-  canvas.add(shape.scale(0.6));
-  shape.set({
-    left: 300,
-    top: 300
-  }).setCoords();
-  canvas.renderAll();
+  // open connection
+  var connection = new WebSocket('ws://127.0.0.1:1337');
 
-  canvas.forEachObject(function(obj) {
-    var setCoords = obj.setCoords.bind(obj);
-    obj.on({
-      moving: setCoords,
-      scaling: setCoords,
-      rotating: setCoords
-    });
-  })
-});
 
-canvas.on('after:render', function() {
-  canvas.contextContainer.strokeStyle = '#555';
 
-  canvas.forEachObject(function(obj) {
-    var bound = obj.getBoundingRect();
+  connection.onmessage = function(message) {
 
-    canvas.contextContainer.strokeRect(
-      bound.left + 0.5,
-      bound.top + 0.5,
-      bound.width,
-      bound.height
-    );
-  })
-});
+    try {
+      var json = JSON.parse(message.data);
+    } catch (e) {
+      console.log('This doesn\'t look like a valid JSON: ', message.data);
+      return;
+    }
+
+    if (json.type === 'action') { // it's a single message
+
+      console.log(json.data);
+      console.timeEnd('Your ping: ')
+
+      //objCollection = json.data;
+
+    } else if (json.type === 'client') { // it's a single message
+
+      console.log(json.data);
+
+      //objCollection.clients = json.data;
+
+    } else {
+      console.log('Hmm..., I\'ve never seen JSON like this: ', json);
+    }
+
+
+
+  };
+
+  function sendMsg() {
+    console.time('Your ping: ')
+    connection.send('Ping');
+
+
+  }
+
+  //sendMsg();

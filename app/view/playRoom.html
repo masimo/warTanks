@@ -1,6 +1,26 @@
-
-<input type="range" max="575" min="25" value="575" data-ng-model='clientTop' placeholder="Position left">
-<canvas id="playRoomField" height="600" width="600"></canvas>
-{{botCounter}}
-
-<button type="button" ng-click="botCounter=botCounter-1" ng-disabled="botCounter==0">Add new one</button>
+<div class="body_wrap">
+	<div class="left_column">
+		<div class="game_list">
+			<select class="select_host" multiple ng-model="hosts">
+				<option>Option1</option>
+				<option selected>Option2</option>
+			</select>
+			
+			<input type="button" class="btn" ng-click="joinToHost();" ng-disabled="hosts" value="Join"></input>
+			<input type="button" class="btn btn-primary" ng-click="hostCreate();" value="Create new"></input>
+		</div>
+	</div>
+	<div class="center_wrap">
+		<div class="info">
+			Bots left: <b>{{botCounter}}</b><br />
+			Score: <b>{{score}}</b><br />
+		</div>
+		
+		
+		<div class="canvas_wrap">
+			<canvas id="playRoomField" height="600" width="600"></canvas>
+		</div>
+		
+		
+	</div>
+</div>
