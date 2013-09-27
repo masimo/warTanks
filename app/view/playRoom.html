@@ -2,12 +2,11 @@
 	<div class="left_column">
 		<div class="game_list">
 			<select class="select_host" multiple ng-model="hosts">
-				<option>Option1</option>
-				<option selected>Option2</option>
+				<option ng-repeat="host in hostArray">{{host}}</option>
+				
 			</select>
-			
-			<input type="button" class="btn" ng-click="joinToHost();" ng-disabled="hosts" value="Join"></input>
 			<input type="button" class="btn btn-primary" ng-click="hostCreate();" value="Create new"></input>
+			<input type="button" class="btn" ng-click="joinToHost(hosts);" ng-show="hosts" value="Join"></input>
 		</div>
 	</div>
 	<div class="center_wrap">

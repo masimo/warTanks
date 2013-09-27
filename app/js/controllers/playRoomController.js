@@ -1,6 +1,6 @@
 'use strict';
 
-app.controller('playRoomController', function NormalModeController($scope, $filter) {
+app.controller('playRoomController', function NormalModeController($scope, $http, $filter) {
 
 	var gamePlay = new Game($scope);
 	var canvas = gamePlay.getCanvas();
@@ -8,7 +8,7 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 	var objCollection = {
 		clients: [],
 		bots: []
-	}
+	};
 
 	//Arrays of random data
 	var rdData = {
@@ -20,11 +20,15 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 	$scope.score = 0;
 	$scope.botCounter = 20;
 
-	$scope.index = index;
+	$scope.index = 0;
 
 	$scope.client = {
 		clientType: 'client'
 	}
+
+	//$scope.hostArray = [];
+
+
 
 	window.WebSocket = window.WebSocket || window.MozWebSocket;
 
@@ -39,12 +43,61 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 
 	//console.log(connection);
 
+
+	$scope.getHostArray = function() {
+
+		$http({
+			method: 'POST',
+			url: '/getHost'
+		}).
+		success(function(data, status, headers, config) {
+
+			$scope.hostArray = data;
+
+		}).
+		error(function(data, status, headers, config) {
+			console.log('crashed');
+		});
+	};
+
+	$scope.joinToHost = function(data) {
+
+		$http({
+			method: 'POST',
+			url: '/joinToHost',
+			data: data
+		}).
+		success(function(data, status, headers, config) {
+
+			console.log(data);
+
+		}).
+		error(function(data, status, headers, config) {
+			console.log('crashed');
+		});
+	};
+
 	//Asign data to game constructor
 	gamePlay.setCollection(objCollection);
 
 
 	$scope.hostCreate = function() {
+		$http({
+			method: 'POST',
+			url: '/createNewHost'
+		}).
+		success(function(data, status, headers, config) {
 
+			
+			
+		}).
+		error(function(data, status, headers, config) {
+			console.log('crashed');
+		});
+
+	};
+
+	$scope.startGame = function() {
 		//Initialize client
 		initClient();
 
@@ -53,7 +106,7 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 
 			$scope.initBot();
 		};
-	};
+	}
 
 	//Init Clients
 
@@ -214,11 +267,6 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 		};
 	};
 
-	var getConnection = function(){
-
-
-	};
-
 
 	connection.onmessage = function(message) {
 
@@ -259,7 +307,8 @@ app.controller('playRoomController', function NormalModeController($scope, $filt
 		canvas.renderAll();
 	};
 
-	
+	$scope.getHostArray();
+
 
 
 });

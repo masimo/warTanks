@@ -5,11 +5,22 @@ var express = require('express');
 var fs = require('fs');
 
 var SOCKET_PORT = 1337;
+var HOSTS = '/getHost';
+var JOIN_TO_THIS_HOST = '/joinToHost';
+var CREATE_NEW_HOST = '/createNewHost';
 
 
-var history = [];
+var hostCollection = [];
+
+var hostIndex = null,
+	clientIndex = null;
+
 // list of currently connected clients (users)
-var clients = [];
+var hostDefault = {
+	type: undefined,
+	name: 'default option1',
+	clients: []
+};
 
 
 exports.start = function(PORT, STATIC_DIR) {
@@ -21,109 +32,120 @@ exports.start = function(PORT, STATIC_DIR) {
 
 	app.use(express.compress());
 
-
 	app.use(express.static(STATIC_DIR));
+
+	app.post(HOSTS, function(req, res, next) {
+
+		var array = [];
+
+		for (var i = hostCollection.length - 1; i >= 0; i--) {
+			array.push(hostCollection[i].name);
+		};
+
+		res.send(array);
+
+	});
+
+	app.post(JOIN_TO_THIS_HOST, function(req, res, next) {
+
+		for (var i = hostCollection.length - 1; i >= 0; i--) {
+			if (req.body[0] === hostCollection[i].name) {
+
+			};
+		};
+		console.log(req.body[0]);
+		res.send('ping');
+	});
+
+	app.post(CREATE_NEW_HOST, function(req, res, next) {
+		var hostIndex = hostCollection.push(webSocket.extend({}, hostDefault)) - 1;
+		console.log(hostIndex);
+		webSocket.createHost();
+		res.send('ping');
+	});
 
 	app.listen(process.env.PORT || 3000);
 
 }
 
-var server = http.createServer(function(request, response) {
-	// Not important for us. We're writing WebSocket server, not HTTP server
-});
-
-server.listen(SOCKET_PORT, function() {
-	console.log((new Date()) + " Server is listening on port " + SOCKET_PORT);
-});
-
-var wsServer = new webSocketServer({
-	httpServer: server
-});
-
-wsServer.on('request', function(request) {
-	console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
-
-	// accept connection - you should check 'request.origin' to make sure that
-	// client is connecting from your website
-	// (http://en.wikipedia.org/wiki/Same_origin_policy)
-	var connection = request.accept(null, request.origin);
+//Socket ---------->
 
 
+var webSocket = {
+	createHost: function() {
 
-	// we need to know client index to remove them on 'close' event
-	var index = clients.push(connection) - 1;
-	var userName = false;
-	var userColor = false;
-
-	if (index === 0) {
-
-		var json = JSON.stringify({
-			clientType: 'host'
-
+		var server = http.createServer(function(request, response) {
+			// Not important for us. We're writing WebSocket server, not HTTP server
 		});
 
-		clients[index].sendUTF(json);
-	}
+		server.listen(SOCKET_PORT, function() {
+			console.log((new Date()) + " Server is listening on port " + SOCKET_PORT);
+		});
 
-	console.log((new Date()) + ' Connection accepted.');
+		var wsServer = new webSocketServer({
+			httpServer: server
+		});
 
-	console.log(index);
+		wsServer.on('request', function(request) {
+			console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
+
+			var connection = request.accept(null, request.origin);
+
+			// we need to know client index to remove them on 'close' event
+			clientIndex = hostCollection[hostIndex].clients.push(connection) - 1;
 
 
-	// user sent some message
-	connection.on('message', function(message) {
-
-		//console.log(message);
-
-		if (message.type === 'utf8') { // accept only text
+			var timeNow = new Date();
+			console.log((timeNow.getHours()) + ':' + (timeNow.getMinutes()) + ':' +
+				(timeNow.getSeconds()) + ' User index ' + index);
 
 
-			messageNew = JSON.parse(message.utf8Data);
 
-			// log and broadcast the message
-			//console.log((new Date()) + ' Received Message from ' + messageNew);
+			// user sent some message
+			connection.on('message', function(message) {
 
-			if (index === 0) {
+				console.log(message);
 
-				var json = JSON.stringify({
-					type: 'action',
-					data: messageNew
-				});
+				if (message.type !== 'utf8') return false;
 
-				// we want to keep history of all sent messages
-				for (var i = 0; i < clients.length; i++) {
-					clients[i].sendUTF(json);
+				try {
+					messageNew = JSON.parse(message.utf8Data);
+				} catch (err) {
+					console.log('Bad obj')
 				}
-			}
-
-
-		} else {
-
-			console.log('This is not utf-8');
-		}
-
-	});
-
-	// user disconnected
-	connection.on('close', function(connection) {
-		//if (userName !== false && userColor !== false) {
-		console.log((new Date()) + " Peer " + connection.remoteAddress + " disconnected.");
-		// remove user from the list of connected clients
-		clients.splice(index, 1);
-
-		if (clients.length) {
-
-			var json = JSON.stringify({
-				clientType: 'host'
 
 			});
 
-			clients[0].sendUTF(json);
-		};
+			// user disconnected
+			connection.on('close', function(connection) {
+				//if (userName !== false && userColor !== false) {
+				console.log((new Date()) + " Peer " + connection.remoteAddress + " disconnected.");
+				// remove user from the list of connected clients
+				hostCollection[hostIndex].clients.splice(clientIndex, 1);
 
-		// push back user's color to be reused by another user
-		//colors.push(userColor);
-		//}
-	});
+			
 
-});
+			});
+
+		});
+
+	},
+
+	generateClient: function() {
+
+	},
+	extend: function(destination, source) {
+
+		for (var property in source) {
+			if (source[property] && source[property].constructor &&
+				source[property].constructor === Object) {
+				destination[property] = destination[property] || {};
+				arguments.callee(destination[property], source[property]);
+			} else {
+				destination[property] = source[property];
+			}
+		}
+		return destination;
+
+	}
+};
