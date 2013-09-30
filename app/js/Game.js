@@ -109,7 +109,6 @@ var Game = function($scope) {
 
 	};
 
-
 	/*
 	 *	Move client
 	 */

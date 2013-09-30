@@ -16,7 +16,7 @@
 }
 div.center_wrap{
 	width: 800px;
-	margin: auto;
+	margin: 0 auto 0 250px;
 }
 .body_wrap{
 	
@@ -30,4 +30,13 @@ div.center_wrap{
 .left_column{
 	float: left;
 	width: 250px;
+}
+/*Dialogs*/
+.modal_wind{
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(255,255,255,0.45);
 }

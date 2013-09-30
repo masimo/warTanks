@@ -1,11 +1,11 @@
 <div class="body_wrap">
 	<div class="left_column">
-		<div class="game_list">
+		<div class="game_list" ng-hide="gameMode">
 			<select class="select_host" multiple ng-model="hosts">
-				<option ng-repeat="host in hostArray">{{host}}</option>
+				<option ng-repeat="host in hostArray" value="{{host.id}}" >{{host.name}}</option>
 				
 			</select>
-			<input type="button" class="btn btn-primary" ng-click="hostCreate();" value="Create new"></input>
+			<input type="button" class="btn btn-primary" ng-click="createHostDlg=true; modalDlg=true" value="Create new"></input>
 			<input type="button" class="btn" ng-click="joinToHost(hosts);" ng-show="hosts" value="Join"></input>
 		</div>
 	</div>
@@ -19,7 +19,41 @@
 		<div class="canvas_wrap">
 			<canvas id="playRoomField" height="600" width="600"></canvas>
 		</div>
+	</div>
+	
+	<div class="modal_wind" ng-show="modalDlg">
+		<div id="createHostDlg" ng-show="createHostDlg" class="modal">
+			
+			<div class="modal-header">
+				<button type="button" class="close" ng-click="createHostDlg=false; modalDlg=false" >&times;</button>
+				<h4>Modal header</h4>
+			</div>
+			<form class="form-horizontal">
+				<div class="modal-body">
+					<div class="control-group">
+						<label class="control-label">Game name</label>
+						<div class="controls">
+							<input type="text" ng-model="inputNameGame" placeholder="Name">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">Protect password</label>
+						<div class="controls">
+							<input type="text" ng-model="inputProtectCode" placeholder="Password">
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<input type="button" class="btn" value="Cancel" ng-click="createHostDlg=false; modalDlg=false">
+					<input type="button" class="btn btn-primary" value="Create host" ng-click="hostCreate();">
+				</div>
+			</form>
+		</div>
 		
-		
+	</div>
+	<input type="button" value="Show" ng-click="checkList()">
+
+	<div class="alert alert-error" ng-show="messageMode">
+		{{errorMsg}}
 	</div>
 </div>

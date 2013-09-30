@@ -1,5 +1,4 @@
 'use strict';
-
 app.controller('playRoomController', function NormalModeController($scope, $http, $filter) {
 
 	var gamePlay = new Game($scope);
@@ -9,67 +8,98 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		clients: [],
 		bots: []
 	};
-
 	//Arrays of random data
 	var rdData = {
 		randomAngle: [0, 90, 180, 270],
 		startPosition: [24, 282, 575],
 		names: ['Boris', 'Den', 'Lyolik', 'Bolik']
 	}
-
 	$scope.score = 0;
 	$scope.botCounter = 20;
-
 	$scope.index = 0;
-
 	$scope.client = {
 		clientType: 'client'
 	}
+	// Dialogs
+	$scope.modalDlg = false;
+	$scope.createHostDlg = false;
 
-	//$scope.hostArray = [];
-
-
+	$scope.hostArray = [];
 
 	window.WebSocket = window.WebSocket || window.MozWebSocket;
-
 	// if browser doesn't support WebSocket, just show some notification and exit
 	if (!window.WebSocket) {
 		console.log('Sory doesnt work');
 		return;
 	};
 
-	// open connection
-	var connection = new WebSocket('ws://127.0.0.1:1337');
+	var connection = {};
 
 	//console.log(connection);
-
-
 	$scope.getHostArray = function() {
-
 		$http({
 			method: 'POST',
 			url: '/getHost'
 		}).
 		success(function(data, status, headers, config) {
-
 			$scope.hostArray = data;
-
 		}).
 		error(function(data, status, headers, config) {
 			console.log('crashed');
 		});
 	};
 
+	$scope.checkList = function() {
+
+		$http({
+			method: 'POST',
+			url: '/hosts'
+		}).
+		success(function(data, status, headers, config) {
+			console.log(data);
+		}).
+		error(function(data, status, headers, config) {
+			console.log('crashed');
+		});
+
+	};
+
 	$scope.joinToHost = function(data) {
+
+		var currentHost = {};
+
+
+		for (var i = 0, len = $scope.hostArray.length; i < len; i++) {
+
+			if ($scope.hostArray[i].id == data) {
+				currentHost = $scope.hostArray[i];
+				break;
+			};
+		};
+
+		currentHost.secure = null;
+
+		if (currentHost.type === 'protected') {
+			currentHost.secure = prompt('This host protected');
+		};
+
+
 
 		$http({
 			method: 'POST',
 			url: '/joinToHost',
-			data: data
+			data: currentHost
 		}).
 		success(function(data, status, headers, config) {
 
-			console.log(data);
+			if (data === 'Jioned') {
+				// open connection
+				connection = new WebSocket('ws://127.0.0.1:1337');
+				$scope.gameMode = true;
+			} else {
+				showErrorMsg('Wrong password')
+
+			}
 
 		}).
 		error(function(data, status, headers, config) {
@@ -80,83 +110,86 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	//Asign data to game constructor
 	gamePlay.setCollection(objCollection);
 
-
 	$scope.hostCreate = function() {
+
+		//check password
+		var pass = $scope.inputProtectCode || null;
+
+		var hostDefault = {
+			id: null,
+			type: pass !== null ? 'protected' : null, // protected or undefined
+			name: $scope.inputNameGame,
+			secure: pass,
+			clients: []
+		};
+
+
 		$http({
 			method: 'POST',
-			url: '/createNewHost'
+			url: '/createNewHost',
+			data: hostDefault
 		}).
 		success(function(data, status, headers, config) {
 
-			
-			
+			// open connection
+			connection = new WebSocket('ws://127.0.0.1:1337');
+
+			$scope.gameMode = true;
+
+			$scope.createHostDlg = false;
+			$scope.modalDlg = false;
+
 		}).
 		error(function(data, status, headers, config) {
 			console.log('crashed');
 		});
-
 	};
 
 	$scope.startGame = function() {
 		//Initialize client
 		initClient();
-
 		//Bot initialization
 		for (var i = 0, len = 3; i < len; i++) {
-
 			$scope.initBot();
 		};
 	}
-
 	//Init Clients
 
 	function initClient() {
 		var name = name || 'defaultName';
 		var self = this;
-
 		var rect = new fabric.Rect({
 			left: 200,
 			top: 575,
 			width: 36,
 			height: 48,
 		});
-
 		canvas.add(rect);
-
 		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
 			rect.fill = new fabric.Pattern({
 				source: img,
 				repeat: 'no-repeat',
 				offsetX: 0
 			});
-
 			objCollection.clients.push({
 				'clientName': name,
 				bot: rect,
 				blt: null,
 				ctrl: gamePlay.extend({}, gamePlay.getClientCtrl())
 			});
-
 		});
-
 	};
-
 	//Create bot
-
 	$scope.initBot = function() {
 		var name = rdData.names.slice(0).sort(function() {
 			return Math.random() > 0.5;
 		}).shift();
-
 		var pos = rdData.startPosition.slice(0).sort(function() {
 			return Math.random() > 0.5;
 		}).shift();
-
 		var angle = rdData.randomAngle.slice(0).sort(function() {
 			return Math.random() > 0.5;
 		}).shift();
-
-
 		var rect = new fabric.Rect({
 			left: pos,
 			top: 24,
@@ -164,30 +197,22 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			height: 48,
 			angle: angle
 		});
-
 		canvas.add(rect);
-
 		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
 			rect.fill = new fabric.Pattern({
 				source: img,
 				repeat: 'no-repeat',
 				offsetX: 0
 			});
-
 			objCollection.bots.push({
 				'clientName': name,
 				bot: rect,
 				blt: null,
 				ctrl: gamePlay.extend({}, gamePlay.getBotCtrl())
 			});
-
 		});
-
 		$scope.botCounter--;
-
 	};
-
-
 	(function(window) {
 		var onEachFrame;
 		if (window.webkitRequestAnimationFrame) {
@@ -199,7 +224,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				_cb();
 			};
 		} else if (window.mozRequestAnimationFrame) {
-
 			onEachFrame = function(cb) {
 				var _cb = function() {
 					cb();
@@ -212,103 +236,73 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				setInterval(cb, 1000 / 60);
 			}
 		}
-
 		window.onEachFrame = onEachFrame;
-
 	})(window);
-
 	//Initialize game
-
-
-
 	$scope.start = function() {
-
 		setInterval(function() {
-
 			gamePlay.update();
-
 			var json = JSON.stringify(objCollection);
-
 			//console.log(json);
-
 			connection.send(json);
-
-
-
 		}, 1000);
 	}
-
 	/*
-	$scope.start = function() {
-
-		window.onEachFrame(function() {
-
-			gamePlay.update();
-
-			var json = JSON.stringify(objCollection);
-
-			//console.log(json);
-
-			connection.send(json);
-
-		});
-	}
+$scope.start = function() {
+window.onEachFrame(function() {
+gamePlay.update();
+var json = JSON.stringify(objCollection);
+//console.log(json);
+connection.send(json);
+});
+}
 */
 
-
 	$scope.botCounterAdd = function() {
-
 		//If true then add new bot
 		if ($scope.botCounter > 0) {
-
 			$scope.initBot();
-
 			$scope.$apply();
 		};
 	};
 
 
+
 	connection.onmessage = function(message) {
-
-
 		try {
 			var json = JSON.parse(message.data);
 		} catch (e) {
 			console.log('This doesn\'t look like a valid JSON: ', message.data);
 			return;
 		}
-
-
 		if (json.clientType === 'host') {
-
 			$scope.client.clientType = 'host';
-
 			$scope.$apply();
-
-
 		} else if (json.type === 'action') { // it's a single message
-
-
 			console.log(json);
-
 			objCollection = json.data;
-
 		} else if (json.type === 'client') { // it's a single message
-
 			console.log(json.data);
-
 			//objCollection.clients = json.data;
-
 		} else {
-
 			console.log('Hmm..., I\'ve never seen JSON like this: ', json);
 		}
-
 		canvas.renderAll();
 	};
 
-	$scope.getHostArray();
+	setInterval(function() {
+		if (!$scope.gameMode) {
+			$scope.getHostArray();
+		};
+	}, 5 * 1000);
 
 
+	function showErrorMsg(data) {
+		$scope.errorMsg = data;
+		$scope.messageMode = true;
 
+		setTimeout(function() {
+			$scope.messageMode = false;
+		}, 2000);
+	};
 });
