@@ -1,8 +1,9 @@
+{{nickName}}
 <div class="body_wrap">
 	<div class="left_column">
 		<div class="game_list" ng-hide="gameMode">
 			<select class="select_host" multiple ng-model="hosts">
-				<option ng-repeat="host in hostArray" value="{{host.id}}" >{{host.name}}</option>
+				<option ng-repeat="host in hostArray" doublclick="joinToHost(hosts);" value="{{host.id}}" >{{host.name}}</option>
 				
 			</select>
 			<input type="button" class="btn btn-primary" ng-click="createHostDlg=true; modalDlg=true" value="Create new"></input>
@@ -44,8 +45,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
+					<input type="button" class="btn btn-primary" ng-show="inputNameGame" value="Create host" ng-click="hostCreate();">
 					<input type="button" class="btn" value="Cancel" ng-click="createHostDlg=false; modalDlg=false">
-					<input type="button" class="btn btn-primary" value="Create host" ng-click="hostCreate();">
 				</div>
 			</form>
 		</div>
@@ -54,6 +55,7 @@
 	<input type="button" value="Show" ng-click="checkList()">
 
 	<div class="alert alert-error" ng-show="messageMode">
+		 <button type="button" class="close" ng-click="messageMode=false;">&times;</button>
 		{{errorMsg}}
 	</div>
 </div>

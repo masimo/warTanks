@@ -14,6 +14,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		startPosition: [24, 282, 575],
 		names: ['Boris', 'Den', 'Lyolik', 'Bolik']
 	}
+
+	$scope.nickName = prompt('Type youre nick name');
+	$scope.nickName = $scope.nickName ? $scope.nickName : 'Default name';
 	$scope.score = 0;
 	$scope.botCounter = 20;
 	$scope.index = 0;
@@ -33,7 +36,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		return;
 	};
 
-	var connection = {};
+	// open connection
+	var connection = new WebSocket('ws://127.0.0.1:1337');
+
+
 
 	//console.log(connection);
 	$scope.getHostArray = function() {
@@ -79,32 +85,16 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		currentHost.secure = null;
 
-		if (currentHost.type === 'protected') {
+		if (currentHost.secureType === 'protected') {
 			currentHost.secure = prompt('This host protected');
 		};
 
+		currentHost.type = 'joinToHost';
+
+		connection.send(JSON.stringify(currentHost));
 
 
-		$http({
-			method: 'POST',
-			url: '/joinToHost',
-			data: currentHost
-		}).
-		success(function(data, status, headers, config) {
 
-			if (data === 'Jioned') {
-				// open connection
-				connection = new WebSocket('ws://127.0.0.1:1337');
-				$scope.gameMode = true;
-			} else {
-				showErrorMsg('Wrong password')
-
-			}
-
-		}).
-		error(function(data, status, headers, config) {
-			console.log('crashed');
-		});
 	};
 
 	//Asign data to game constructor
@@ -115,34 +105,25 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		//check password
 		var pass = $scope.inputProtectCode || null;
 
-		var hostDefault = {
-			id: null,
-			type: pass !== null ? 'protected' : null, // protected or undefined
-			name: $scope.inputNameGame,
-			secure: pass,
-			clients: []
-		};
+		connection.send(JSON.stringify({
+			type: 'createHost',
+			data: {
+				id: null,
+				hostIndex: null,
+				secureType: pass !== null ? 'protected' : null, // protected or undefined
+				name: $scope.inputNameGame,
+				secure: pass,
+				clients: [],
+				disabled: false
+			}
+		}));
+
+		$scope.gameMode = true;
+		$scope.createHostDlg = false;
+		$scope.modalDlg = false;
 
 
-		$http({
-			method: 'POST',
-			url: '/createNewHost',
-			data: hostDefault
-		}).
-		success(function(data, status, headers, config) {
 
-			// open connection
-			connection = new WebSocket('ws://127.0.0.1:1337');
-
-			$scope.gameMode = true;
-
-			$scope.createHostDlg = false;
-			$scope.modalDlg = false;
-
-		}).
-		error(function(data, status, headers, config) {
-			console.log('crashed');
-		});
 	};
 
 	$scope.startGame = function() {
@@ -275,26 +256,25 @@ connection.send(json);
 			console.log('This doesn\'t look like a valid JSON: ', message.data);
 			return;
 		}
-		if (json.clientType === 'host') {
-			$scope.client.clientType = 'host';
+
+		if (json.type == 'index') {
+
+			$scope.index = json.data;
+			connection.send(JSON.stringify({
+				type: 'setName',
+				nickName: $scope.nickName
+			}));
+		} else if (json.type == 'setIndex') {
+			$scope.index = json.data;
+			console.log($scope.nickName + 'your new index is ' + $scope.index);
+		} else if (json.type == 'hostArray') {
+			$scope.hostArray = json.data;
 			$scope.$apply();
-		} else if (json.type === 'action') { // it's a single message
-			console.log(json);
-			objCollection = json.data;
-		} else if (json.type === 'client') { // it's a single message
-			console.log(json.data);
-			//objCollection.clients = json.data;
-		} else {
-			console.log('Hmm..., I\'ve never seen JSON like this: ', json);
-		}
-		canvas.renderAll();
+		};
+
+		//canvas.renderAll();
 	};
 
-	setInterval(function() {
-		if (!$scope.gameMode) {
-			$scope.getHostArray();
-		};
-	}, 5 * 1000);
 
 
 	function showErrorMsg(data) {
