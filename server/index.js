@@ -17,8 +17,6 @@ var HOSTS = '/getHost',
 var hostCollection = [];
 var clients = [];
 
-var index = undefined;
-
 
 exports.start = function(PORT, STATIC_DIR) {
 
@@ -59,11 +57,11 @@ exports.start = function(PORT, STATIC_DIR) {
 
 	app.post(CREATE_NEW_HOST, function(req, res, next) {
 
-		index = hostCollection.push(webSocket.extend({}, req.body)) - 1;
+		var index = hostCollection.push(webSocket.extend({}, req.body)) - 1;
 
 		(function() {
 
-			_id = Math.random().toString(36).substring(2);
+			var _id = Math.random().toString(36).substring(2);
 
 			for (var i = 0, len = hostCollection.length; i < len; i++) {
 				if (_id == hostCollection[index].id) {
@@ -115,7 +113,6 @@ wsServer.on('request', function(request) {
 	var connection = request.accept(null, request.origin);
 
 	var userName = '';
-	var hostIndex = null;
 
 	var index = {};
 
@@ -127,10 +124,13 @@ wsServer.on('request', function(request) {
 		data: index.chat
 	}));
 
+	console.log(index.chat);
+
 
 
 	// user sent some message
 	connection.on('message', function(message) {
+
 
 		if (message.type !== 'utf8') return false;
 
@@ -154,30 +154,64 @@ wsServer.on('request', function(request) {
 			}));
 		} else if (json.type == 'createHost') {
 
+
+
 			//Create host
-			var index = hostCollection.push(json.data) - 1;
+			var hostInit = hostCollection.push(json.data) - 1;
 
-			hostCollection[index].hostIndex = index;
-			index.host = index;
+			//set unique identifier
+			dataActions.getId(function(_id) {
 
-			index.client = hostCollection[index].clients.push(connection) - 1;
+				hostCollection[hostInit].id = _id;
+			}, hostCollection);
+
+			hostCollection[hostInit].hostIndex = hostInit;
+			index.host = hostInit;
+
+			index.client = hostCollection[hostInit].clients.push(connection) - 1;
 
 			var host = JSON.stringify({
 				type: 'hostArray',
 				data: dataActions.hostArray(hostCollection)
 			});
-			clients.forEach(function() {
-				connection.sendUTF(JSON.stringify(host));
+			clients.forEach(function(value) {
+				value.sendUTF(host);
 			});
 
 
 
 		} else if (json.type == 'joinToHost') {
 
-			console.log(json.hostIndex);
+			//console.log(index.chat);
 
 			//Create host
-			hostIndex = hostCollection[hostIndex].clients.push(json.data) - 1;
+
+			hostCollection.forEach(function(value, key) {
+
+				if (json.id === value.id &&
+					json.secure === value.secure) {
+
+					index.client = value.clients.push(connection) - 1;
+
+					index.host = value.hostIndex;
+
+				} else {
+
+					console.log('Wrong permissions');
+				}
+			});
+
+
+
+		} else if (json.type == 'gameChatMsg') {
+
+			hostCollection[index.host].clients.forEach(function(value) {
+				value.sendUTF(JSON.stringify({
+					type: 'gameChatMsg',
+					data: json.data
+				}))
+			});
+
 		};
 
 	});

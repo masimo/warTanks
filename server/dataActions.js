@@ -13,21 +13,22 @@ var dataActions = {
 
 		return array;
 	},
-	joinToHost: function(hostCollection) {
+	getId: function(callBack, hostCollection) {
 
-		hostCollection.forEach(function(value, key) {
+		var _id = Math.random().toString(36).substring(2);
 
-			if (req.body.id === value.id &&
-				req.body.secure === value.secure) {
+		for (var i = 0, len = hostCollection.length; i < len; i++) {
+			if (_id == hostCollection[i].id) {
+				arguments.callee();
+			};
+		};
 
-				value.clients.push({
-					nickName: req.body.nickName,
-					'connection': {},
-					hostIndex: key
-				});
-			}
+		callBack(_id);
 
-		});
+	},
+	joinToHost: function(value, key) {
+
+
 	}
 };
 exports.dataActions = dataActions;

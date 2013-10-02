@@ -40,3 +40,11 @@ div.center_wrap{
 	bottom: 0;
 	background: rgba(255,255,255,0.45);
 }
+.chat_history{
+	margin-bottom: 10px;
+	padding: 5px;
+	width: 240px;
+	height: 150px;
+	border: 1px solid #CCC;
+	overflow: auto;
+}

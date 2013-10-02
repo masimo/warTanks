@@ -1,13 +1,22 @@
-{{nickName}}
 <div class="body_wrap">
 	<div class="left_column">
 		<div class="game_list" ng-hide="gameMode">
-			<select class="select_host" multiple ng-model="hosts">
+			<select class="select_host"  multiple="multiple" ng-model="hosts">
 				<option ng-repeat="host in hostArray" doublclick="joinToHost(hosts);" value="{{host.id}}" >{{host.name}}</option>
 				
 			</select>
 			<input type="button" class="btn btn-primary" ng-click="createHostDlg=true; modalDlg=true" value="Create new"></input>
 			<input type="button" class="btn" ng-click="joinToHost(hosts);" ng-show="hosts" value="Join"></input>
+		</div>
+		<div class="game_chat" ng-show="gameMode" >
+			<div class="chat_history">{{chatHistory}}</div>
+			
+			<label class="control-label">{{nickName}}</label>
+			<div class="input-append">
+				<input id="chatGameMode" type="text" class="span2" ng-model="gameChatMsg" placeholder="Type here message">
+				<button type="button" class="btn" ng-click="sendGameChat(gameChatMsg);" ng-disabled="!gameChatMsg"><i class="icon-envelope"></i>Send</button>
+			</div>
+			
 		</div>
 	</div>
 	<div class="center_wrap">
@@ -34,7 +43,7 @@
 					<div class="control-group">
 						<label class="control-label">Game name</label>
 						<div class="controls">
-							<input type="text" ng-model="inputNameGame" placeholder="Name">
+							<input type="text" ng-model="inputNameGame" id="focusedInput" placeholder="Name">
 						</div>
 					</div>
 					<div class="control-group">
@@ -53,9 +62,8 @@
 		
 	</div>
 	<input type="button" value="Show" ng-click="checkList()">
-
 	<div class="alert alert-error" ng-show="messageMode">
-		 <button type="button" class="close" ng-click="messageMode=false;">&times;</button>
+		<button type="button" class="close" ng-click="messageMode=false;">&times;</button>
 		{{errorMsg}}
 	</div>
 </div>

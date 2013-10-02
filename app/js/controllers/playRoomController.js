@@ -1,8 +1,8 @@
 'use strict';
 app.controller('playRoomController', function NormalModeController($scope, $http, $filter) {
 
-	var gamePlay = new Game($scope);
-	var canvas = gamePlay.getCanvas();
+	//var gamePlay = new Game($scope);
+	//var canvas = gamePlay.getCanvas();
 
 	var objCollection = {
 		clients: [],
@@ -15,6 +15,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		names: ['Boris', 'Den', 'Lyolik', 'Bolik']
 	}
 
+	$scope.chatHistory = '';
 	$scope.nickName = prompt('Type youre nick name');
 	$scope.nickName = $scope.nickName ? $scope.nickName : 'Default name';
 	$scope.score = 0;
@@ -76,11 +77,14 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 
 		for (var i = 0, len = $scope.hostArray.length; i < len; i++) {
-
+			console.log(data);
 			if ($scope.hostArray[i].id == data) {
 				currentHost = $scope.hostArray[i];
+				console.log($scope.hostArray[i]);
 				break;
 			};
+			//there is no such host
+			return false;
 		};
 
 		currentHost.secure = null;
@@ -91,14 +95,18 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		currentHost.type = 'joinToHost';
 
+
 		connection.send(JSON.stringify(currentHost));
+
+		$scope.gameMode = true;
+		$scope.gameChat = true;
 
 
 
 	};
 
 	//Asign data to game constructor
-	gamePlay.setCollection(objCollection);
+	//gamePlay.setCollection(objCollection);
 
 	$scope.hostCreate = function() {
 
@@ -121,6 +129,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		$scope.gameMode = true;
 		$scope.createHostDlg = false;
 		$scope.modalDlg = false;
+
+		$scope.gameChat = true;
 
 
 
@@ -270,10 +280,28 @@ connection.send(json);
 		} else if (json.type == 'hostArray') {
 			$scope.hostArray = json.data;
 			$scope.$apply();
+		} else if (json.type == 'gameChatMsg'){
+
+			var timeNow = new Date();
+			var message = timeNow.getHours() + ':' + timeNow.getMinutes() + ':' +
+				timeNow.getSeconds() + '> ' + json.data;
+			$scope.chatHistory += message;
 		};
 
 		//canvas.renderAll();
 	};
+
+	function sendGameChat(text) {
+
+		var message = $scope.nickName + ' ' + text;
+
+		connection.send(JSON.stringify({
+			type: 'gameChatMsg',
+			data: message
+		}));
+
+		$scope.gameChatMsg = '';
+	}
 
 
 
@@ -285,4 +313,15 @@ connection.send(json);
 			$scope.messageMode = false;
 		}, 2000);
 	};
+
+	$('#chatGameMode').keydown(function(event) {
+		var key = event.keyCode;
+
+
+		if (key === 13 && $scope.gameMode) {
+			var text = $(this).val();
+			sendGameChat(text);
+
+		};
+	});
 });
