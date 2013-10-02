@@ -6,6 +6,7 @@ var dataActions = {
 			array.push({
 				id: value.id,
 				hostIndex: value.hostIndex,
+				secureType: value.secureType,
 				name: value.name,
 				type: value.type,
 			});

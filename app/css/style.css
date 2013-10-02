@@ -47,4 +47,5 @@ div.center_wrap{
 	height: 150px;
 	border: 1px solid #CCC;
 	overflow: auto;
+	font-size: 0.9em;
 }

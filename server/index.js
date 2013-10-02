@@ -195,7 +195,16 @@ wsServer.on('request', function(request) {
 
 					index.host = value.hostIndex;
 
+					connection.sendUTF(JSON.stringify({
+						type: 'clientConnected'
+					}));
+
 				} else {
+
+					connection.sendUTF(JSON.stringify({
+						type: 'warning',
+						data: 'Password incorrect'
+					}))
 
 					console.log('Wrong permissions');
 				}

@@ -77,15 +77,14 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 
 		for (var i = 0, len = $scope.hostArray.length; i < len; i++) {
-			console.log(data);
+
 			if ($scope.hostArray[i].id == data) {
 				currentHost = $scope.hostArray[i];
-				console.log($scope.hostArray[i]);
 				break;
 			};
-			//there is no such host
-			return false;
+
 		};
+		console.log(currentHost);
 
 		currentHost.secure = null;
 
@@ -97,9 +96,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 
 		connection.send(JSON.stringify(currentHost));
-
-		$scope.gameMode = true;
-		$scope.gameChat = true;
 
 
 
@@ -280,47 +276,61 @@ connection.send(json);
 		} else if (json.type == 'hostArray') {
 			$scope.hostArray = json.data;
 			$scope.$apply();
-		} else if (json.type == 'gameChatMsg'){
+		} else if (json.type == 'gameChatMsg') {
 
 			var timeNow = new Date();
-			var message = timeNow.getHours() + ':' + timeNow.getMinutes() + ':' +
-				timeNow.getSeconds() + '> ' + json.data;
-			$scope.chatHistory += message;
+			var message = timeNow.getHours() + ':' + timeNow.getMinutes() +
+				':' + timeNow.getSeconds() + ' ' + json.data;
+			$scope.chatHistory = message + '<br />' + $scope.chatHistory;
+
+			$scope.gameChatMsg = '';
+			$scope.$apply();
+		} else if (json.type == 'clientConnected') {
+
+			$scope.gameMode = true;
+			$scope.gameChat = true;
+			$scope.$apply();
+
+		} else if (json.type == 'warning') {
+
+			$scope.showErrorMsg(json.data);
 		};
 
 		//canvas.renderAll();
 	};
 
-	function sendGameChat(text) {
+	$scope.sendGameChat = function(text) {
 
-		var message = $scope.nickName + ' ' + text;
+		var message = '<b>' + $scope.nickName + '</b>' + ' ' + text;
 
 		connection.send(JSON.stringify({
 			type: 'gameChatMsg',
 			data: message
 		}));
 
-		$scope.gameChatMsg = '';
+
 	}
 
 
 
-	function showErrorMsg(data) {
+	$scope.showErrorMsg = function(data) {
 		$scope.errorMsg = data;
 		$scope.messageMode = true;
 
 		setTimeout(function() {
 			$scope.messageMode = false;
 		}, 2000);
+
+		$scope.$apply();
 	};
 
 	$('#chatGameMode').keydown(function(event) {
 		var key = event.keyCode;
 
-
-		if (key === 13 && $scope.gameMode) {
+		if (key === 13 && $scope.gameMode && $scope.gameChatMsg) {
 			var text = $(this).val();
-			sendGameChat(text);
+
+			$scope.sendGameChat(text);
 
 		};
 	});
