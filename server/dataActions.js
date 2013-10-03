@@ -3,6 +3,7 @@ var dataActions = {
 		var array = [];
 
 		hostCollection.map(function(value) {
+			if (value.disabled) return false;
 			array.push({
 				id: value.id,
 				hostIndex: value.hostIndex,

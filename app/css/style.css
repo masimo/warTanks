@@ -16,13 +16,13 @@
 }
 div.center_wrap{
 	width: 800px;
-	margin: 0 auto 0 250px;
+	margin: 0 auto 0 320px;
 }
 .body_wrap{
 	
 }
 .select_host{
-	width: 250px;
+	width: 300px;
 }
 .game_list{
 		
@@ -43,8 +43,8 @@ div.center_wrap{
 .chat_history{
 	margin-bottom: 10px;
 	padding: 5px;
-	width: 240px;
-	height: 150px;
+	width: 290px;
+	height: 440px;
 	border: 1px solid #CCC;
 	overflow: auto;
 	font-size: 0.9em;

@@ -1,8 +1,8 @@
 'use strict';
 app.controller('playRoomController', function NormalModeController($scope, $http, $filter) {
 
-	//var gamePlay = new Game($scope);
-	//var canvas = gamePlay.getCanvas();
+	var gamePlay,
+		canvas;
 
 	var objCollection = {
 		clients: [],
@@ -12,15 +12,16 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	var rdData = {
 		randomAngle: [0, 90, 180, 270],
 		startPosition: [24, 282, 575],
-		names: ['Boris', 'Den', 'Lyolik', 'Bolik']
+		names: ['Boris', 'Den', 'Lyolik', 'Bolik'],
+		leftPosition: [200, 400]
 	}
 
+	$scope.startGameBtn = true;
 	$scope.chatHistory = '';
-	$scope.nickName = prompt('Type youre nick name');
-	$scope.nickName = $scope.nickName ? $scope.nickName : 'Default name';
 	$scope.score = 0;
 	$scope.botCounter = 20;
 	$scope.index = 0;
+	$scope.indexChat = 0;
 	$scope.client = {
 		clientType: 'client'
 	}
@@ -29,16 +30,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	$scope.createHostDlg = false;
 
 	$scope.hostArray = [];
-
-	window.WebSocket = window.WebSocket || window.MozWebSocket;
-	// if browser doesn't support WebSocket, just show some notification and exit
-	if (!window.WebSocket) {
-		console.log('Sory doesnt work');
-		return;
-	};
-
-	// open connection
-	var connection = new WebSocket('ws://127.0.0.1:1337');
 
 
 
@@ -101,8 +92,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	};
 
-	//Asign data to game constructor
-	//gamePlay.setCollection(objCollection);
+
 
 	$scope.hostCreate = function() {
 
@@ -117,6 +107,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				secureType: pass !== null ? 'protected' : null, // protected or undefined
 				name: $scope.inputNameGame,
 				secure: pass,
+				objCollection: {},
 				clients: [],
 				disabled: false
 			}
@@ -133,20 +124,32 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	};
 
 	$scope.startGame = function() {
+
 		//Initialize client
-		initClient();
+		for (var i = 0, len = 2; i < len; i++) {
+			initClient();
+		}
+
 		//Bot initialization
 		for (var i = 0, len = 3; i < len; i++) {
 			$scope.initBot();
 		};
+
+		canvas.renderAll();
 	}
 	//Init Clients
 
 	function initClient() {
 		var name = name || 'defaultName';
 		var self = this;
+		var pos = rdData.leftPosition.slice(0).sort(function() {
+			return Math.random() > 0.5;
+		}).shift();
+
+		var ofst = pos === 200 ? 0 : -48;
+
 		var rect = new fabric.Rect({
-			left: 200,
+			left: pos,
 			top: 575,
 			width: 36,
 			height: 48,
@@ -156,7 +159,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			rect.fill = new fabric.Pattern({
 				source: img,
 				repeat: 'no-repeat',
-				offsetX: 0
+				offsetX: 0,
+				offsetY: ofst
 			});
 			objCollection.clients.push({
 				'clientName': name,
@@ -184,7 +188,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			height: 48,
 			angle: angle
 		});
+
 		canvas.add(rect);
+
 		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
 			rect.fill = new fabric.Pattern({
 				source: img,
@@ -225,14 +231,56 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		}
 		window.onEachFrame = onEachFrame;
 	})(window);
+
+	//Create game with bots
+	$scope.initGame = function() {
+		gamePlay = new Game($scope);
+		canvas = gamePlay.getCanvas();
+
+		//Asign data to game constructor
+		gamePlay.setCollection(objCollection);
+
+		$scope.startGame();
+
+		connection.send(JSON.stringify({
+			type: 'initGame',
+			data: objCollection
+		}));
+
+
+		setTimeout(function() {
+			$scope.start();
+		}, 2000);
+	};
+
+	function initReoteClient(data) {
+		gamePlay = new Game($scope);
+		canvas = gamePlay.getCanvas();
+
+		//Asign data to game constructor
+		gamePlay.setCollection(objCollection);
+
+		objCollection = data;
+
+		for (var key in objCollection) {
+			objCollection[key].forEach(function(value) {
+				canvas.add(value.bot);
+			});
+
+		}
+	};
+
 	//Initialize game
 	$scope.start = function() {
 		setInterval(function() {
 			gamePlay.update();
-			var json = JSON.stringify(objCollection);
-			//console.log(json);
-			connection.send(json);
-		}, 1000);
+
+			connection.send(JSON.stringify({
+				type: 'sendHost',
+				data: objCollection
+			}));
+
+		}, 30);
 	}
 	/*
 $scope.start = function() {
@@ -245,6 +293,8 @@ connection.send(json);
 }
 */
 
+
+
 	$scope.botCounterAdd = function() {
 		//If true then add new bot
 		if ($scope.botCounter > 0) {
@@ -255,57 +305,13 @@ connection.send(json);
 
 
 
-	connection.onmessage = function(message) {
-		try {
-			var json = JSON.parse(message.data);
-		} catch (e) {
-			console.log('This doesn\'t look like a valid JSON: ', message.data);
-			return;
-		}
-
-		if (json.type == 'index') {
-
-			$scope.index = json.data;
-			connection.send(JSON.stringify({
-				type: 'setName',
-				nickName: $scope.nickName
-			}));
-		} else if (json.type == 'setIndex') {
-			$scope.index = json.data;
-			console.log($scope.nickName + 'your new index is ' + $scope.index);
-		} else if (json.type == 'hostArray') {
-			$scope.hostArray = json.data;
-			$scope.$apply();
-		} else if (json.type == 'gameChatMsg') {
-
-			var timeNow = new Date();
-			var message = timeNow.getHours() + ':' + timeNow.getMinutes() +
-				':' + timeNow.getSeconds() + ' ' + json.data;
-			$scope.chatHistory = message + '<br />' + $scope.chatHistory;
-
-			$scope.gameChatMsg = '';
-			$scope.$apply();
-		} else if (json.type == 'clientConnected') {
-
-			$scope.gameMode = true;
-			$scope.gameChat = true;
-			$scope.$apply();
-
-		} else if (json.type == 'warning') {
-
-			$scope.showErrorMsg(json.data);
-		};
-
-		//canvas.renderAll();
-	};
-
 	$scope.sendGameChat = function(text) {
 
 		var message = '<b>' + $scope.nickName + '</b>' + ' ' + text;
 
 		connection.send(JSON.stringify({
 			type: 'gameChatMsg',
-			data: message
+			data: objCollection.clients
 		}));
 
 
@@ -334,4 +340,76 @@ connection.send(json);
 
 		};
 	});
+
+	$scope.nickName = prompt('Type youre nick name');
+	$scope.nickName = $scope.nickName ? $scope.nickName : 'Default name';
+
+	window.WebSocket = window.WebSocket || window.MozWebSocket;
+	// if browser doesn't support WebSocket, just show some notification and exit
+	if (!window.WebSocket) {
+		console.log('Sory doesnt work');
+		return;
+	};
+
+	// open connection
+	var connection = new WebSocket('ws://127.0.0.1:1337');
+
+	connection.onmessage = function(message) {
+		try {
+			var json = JSON.parse(message.data);
+		} catch (e) {
+			console.log('This doesn\'t look like a valid JSON: ', message.data);
+			return;
+		}
+
+		if (json.type == 'index') {
+
+			$scope.indexChat = json.data;
+			connection.send(JSON.stringify({
+				type: 'setName',
+				nickName: $scope.nickName
+			}));
+			
+			//Update index when some user out
+		} else if (json.type == 'setIndex') {
+			$scope.indexChat = json.data;
+			console.log($scope.nickName + 'your new index is ' + $scope.indexChat);
+		} else if (json.type == 'hostArray') {
+			$scope.hostArray = json.data;
+			$scope.$apply();
+		} else if (json.type == 'gameChatMsg') {
+
+			var timeNow = new Date();
+			var message = timeNow.getHours() + ':' + timeNow.getMinutes() +
+				':' + timeNow.getSeconds() + ' ' + json.data;
+			$scope.chatHistory = message + '<br />' + $scope.chatHistory;
+
+			$scope.gameChatMsg = '';
+			$scope.$apply();
+		} else if (json.type == 'clientConnected') {
+
+			$scope.gameMode = true;
+			$scope.gameChat = true;
+			$scope.$apply();
+
+		} else if (json.type == 'warning') {
+
+			$scope.showErrorMsg(json.data);
+			$scope.hostArray = json.hosts;
+
+			$scope.$apply();
+		} else if (json.type == 'updateClient') {
+
+			connection.send(JSON.stringify({
+				type: 'sendClient',
+				data: objCollection.clients[$scope.index]
+			}));
+		} else if (json.type == 'initGame') {
+
+			initReoteClient(json.data);
+		};
+
+		//canvas.renderAll();
+	};
+
 });

@@ -114,7 +114,11 @@ wsServer.on('request', function(request) {
 
 	var userName = '';
 
-	var index = {};
+	var index = {
+		chat: null,
+		host: null,
+		client: null
+	};
 
 	// we need to know client index to remove them on 'close' event
 	index.chat = clients.push(connection) - 1;
@@ -186,10 +190,12 @@ wsServer.on('request', function(request) {
 
 			//Create host
 
+
+
 			hostCollection.forEach(function(value, key) {
 
 				if (json.id === value.id &&
-					json.secure === value.secure) {
+					json.secure === value.secure && !value.disabled) {
 
 					index.client = value.clients.push(connection) - 1;
 
@@ -203,10 +209,9 @@ wsServer.on('request', function(request) {
 
 					connection.sendUTF(JSON.stringify({
 						type: 'warning',
-						data: 'Password incorrect'
+						data: 'Password incorrect or host not response',
+						hosts: dataActions.hostArray(hostCollection)
 					}))
-
-					console.log('Wrong permissions');
 				}
 			});
 
@@ -221,6 +226,37 @@ wsServer.on('request', function(request) {
 				}))
 			});
 
+		} else if (json.type == 'sendHost') {
+
+			hostCollection[index.host].objCollection = json.data;
+
+			for (var i = 1; i < hostCollection[index.host].clients.length; i++) {
+
+				hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
+					type: 'updateClient'
+				}));
+			};
+
+		} else if (json.type == 'sendClient') {
+
+			hostCollection[index.host].objCollection.clients[index.client] = json.data;
+
+			hostCollection[index.host].clients.forEach(function(value) {
+				value.sendUTF(JSON.stringify({
+					type: 'renderAll',
+					data: hostCollection[index.host].objCollection
+				}));
+			});
+		} else if (json.type == 'initGame') {
+
+			for (var i = 1; i < hostCollection[index.host].clients.length; i++) {
+
+				hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
+					type: 'initGame',
+					data: json.data
+
+				}));
+			};
 		};
 
 	});
@@ -236,6 +272,19 @@ wsServer.on('request', function(request) {
 		// remove user from the list of connected clients
 
 		clients.splice(index.chat, 1);
+
+		if (index.client !== null) {
+			hostCollection[index.host].clients.splice(index.client, 1);
+
+			//We need to disabled this host if all clients left
+			var len = hostCollection[index.host].clients.length;
+			console.log(len);
+			if (len === 0) {
+				hostCollection[index.host].disabled = true;
+			}
+		};
+
+
 
 		//Update client Index
 		clients.forEach(function(value, key) {
