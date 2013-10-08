@@ -17,10 +17,12 @@
 				<button type="button" class="btn" ng-click="sendGameChat(gameChatMsg);" ng-disabled="!gameChatMsg"><i class="icon-envelope"></i>Send</button>
 			</div>
 
-			<button type="botton" class="btn btn-large btn-warning" ng-model="startGameBtn" ng-click="startGameBtn=false; initGame();" ng-show="startGameBtn">Start!</button>
+			<button type="botton" class="btn btn-large btn-warning" ng-model="startGameBtn" ng-click="startGameBtn=false; initGame();" ng-show="startGameBtn && youHost">Start!</button>
+			{{youHost}}
 			
 		</div>
 	</div>
+
 	<div class="center_wrap">
 		<div class="info">
 			Bots left: <b>{{botCounter}}</b><br />

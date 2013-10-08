@@ -1,8 +1,15 @@
-var dataActions = {
-	hostArray: function(hostCollection) {
+var DataActions = function(collection) {
+	var _self = this;
+
+	_self.gameData = collection;
+
+	_self.hostArray = function() {
+
 		var array = [];
 
-		hostCollection.map(function(value) {
+		_self.gameData.hostCollection.map(function(value) {
+			console.log(value.disabled);
+
 			if (value.disabled) return false;
 			array.push({
 				id: value.id,
@@ -15,12 +22,12 @@ var dataActions = {
 
 		return array;
 	},
-	getId: function(callBack, hostCollection) {
+	_self.getId = function(callBack) {
 
 		var _id = Math.random().toString(36).substring(2);
 
-		for (var i = 0, len = hostCollection.length; i < len; i++) {
-			if (_id == hostCollection[i].id) {
+		for (var i = 0, len = _self.gameData.hostCollection.length; i < len; i++) {
+			if (_id == _self.gameData.hostCollection[i].id) {
 				arguments.callee();
 			};
 		};
@@ -28,9 +35,10 @@ var dataActions = {
 		callBack(_id);
 
 	},
-	joinToHost: function(value, key) {
+	_self.joinToHost = function(value, key) {
 
 
 	}
 };
-exports.dataActions = dataActions;
+
+exports.DataActions = DataActions;

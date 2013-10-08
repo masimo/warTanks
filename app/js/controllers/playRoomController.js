@@ -15,7 +15,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		names: ['Boris', 'Den', 'Lyolik', 'Bolik'],
 		leftPosition: [200, 400]
 	}
-
+	$scope.youHost = false;
 	$scope.startGameBtn = true;
 	$scope.chatHistory = '';
 	$scope.score = 0;
@@ -75,7 +75,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			};
 
 		};
-		console.log(currentHost);
 
 		currentHost.secure = null;
 
@@ -85,10 +84,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		currentHost.type = 'joinToHost';
 
+		currentHost.myNickName = $scope.nickName;
 
 		connection.send(JSON.stringify(currentHost));
-
-
 
 	};
 
@@ -135,7 +133,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			$scope.initBot();
 		};
 
-		canvas.renderAll();
 	}
 	//Init Clients
 
@@ -154,7 +151,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			width: 36,
 			height: 48,
 		});
+
 		canvas.add(rect);
+
 		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
 			rect.fill = new fabric.Pattern({
 				source: img,
@@ -191,6 +190,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		canvas.add(rect);
 
+
 		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
 			rect.fill = new fabric.Pattern({
 				source: img,
@@ -206,6 +206,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		});
 		$scope.botCounter--;
 	};
+
 	(function(window) {
 		var onEachFrame;
 		if (window.webkitRequestAnimationFrame) {
@@ -232,6 +233,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		window.onEachFrame = onEachFrame;
 	})(window);
 
+
 	//Create game with bots
 	$scope.initGame = function() {
 		gamePlay = new Game($scope);
@@ -242,18 +244,22 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		$scope.startGame();
 
-		connection.send(JSON.stringify({
-			type: 'initGame',
-			data: objCollection
-		}));
+		setTimeout(function() {
 
+			canvas.renderAll();
+
+			connection.send(JSON.stringify({
+				type: 'initGame',
+				data: objCollection
+			}));
+		}, 500);
 
 		setTimeout(function() {
 			$scope.start();
 		}, 2000);
 	};
 
-	function initReoteClient(data) {
+	function initRemoteClient(data, canvasData) {
 		gamePlay = new Game($scope);
 		canvas = gamePlay.getCanvas();
 
@@ -262,16 +268,49 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		objCollection = data;
 
-		for (var key in objCollection) {
-			objCollection[key].forEach(function(value) {
-				canvas.add(value.bot);
+		for (var prop in objCollection) {
+			objCollection[prop].forEach(function(value) {
+				canvas.add(new fabric.Rect(value.bot));
 			});
-
 		}
+
+
+		//canvas.loadFromJSON(JSON.stringify(data));
+
+		setTimeout(function() {
+			canvas.renderAll()
+		}, 50);
+
+
+	};
+
+	function updateClient(data, canvasData) {
+
+		//objCollection = data;
+
+		for (var prop in objCollection) {
+			objCollection[prop].forEach(function(value, key) {
+
+				value.bot.left = data[prop].bot[key].left;
+				value.bot.top = data[prop].bot[key].top;
+				value.bot.angle = data[prop].bot[key].angle;
+
+			});
+		}
+
+		//canvas.add(new fabric.Rect(data));
+		//canvas.loadFromJSON(JSON.stringify(data));
+
+		canvas.renderAll();
+
+
+		//canvas.loadFromJSON(JSON.stringify(canvasData)).renderAll();
+
 	};
 
 	//Initialize game
 	$scope.start = function() {
+
 		setInterval(function() {
 			gamePlay.update();
 
@@ -280,7 +319,11 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				data: objCollection
 			}));
 
+			canvas.renderAll();
+
 		}, 30);
+
+		;
 	}
 	/*
 $scope.start = function() {
@@ -311,12 +354,11 @@ connection.send(json);
 
 		connection.send(JSON.stringify({
 			type: 'gameChatMsg',
-			data: objCollection.clients
+			data: message
 		}));
 
 
 	}
-
 
 
 	$scope.showErrorMsg = function(data) {
@@ -329,6 +371,7 @@ connection.send(json);
 
 		$scope.$apply();
 	};
+
 
 	$('#chatGameMode').keydown(function(event) {
 		var key = event.keyCode;
@@ -369,13 +412,16 @@ connection.send(json);
 				type: 'setName',
 				nickName: $scope.nickName
 			}));
-			
+
 			//Update index when some user out
 		} else if (json.type == 'setIndex') {
 			$scope.indexChat = json.data;
 			console.log($scope.nickName + 'your new index is ' + $scope.indexChat);
 		} else if (json.type == 'hostArray') {
 			$scope.hostArray = json.data;
+			$scope.$apply();
+		} else if (json.type === 'youHost') {
+			$scope.youHost = true;
 			$scope.$apply();
 		} else if (json.type == 'gameChatMsg') {
 
@@ -400,13 +446,11 @@ connection.send(json);
 			$scope.$apply();
 		} else if (json.type == 'updateClient') {
 
-			connection.send(JSON.stringify({
-				type: 'sendClient',
-				data: objCollection.clients[$scope.index]
-			}));
+			updateClient(json.data);
+
 		} else if (json.type == 'initGame') {
 
-			initReoteClient(json.data);
+			initRemoteClient(json.data);
 		};
 
 		//canvas.renderAll();
