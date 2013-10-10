@@ -1,7 +1,12 @@
-#playRoomField{
+#playRoomField,
+#bulletsField{
+	position: absolute;
 	display: block;
 	margin: auto;
 	border: 1px solid #BEBEBE;
+}
+.canvas-container{
+	position: absolute !important;
 }
 .canvas_wrap{
 	position: relative;

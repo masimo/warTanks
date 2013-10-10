@@ -145,11 +145,11 @@ wsServer.on('request', function(request) {
 
 			//Create host
 
-
+			var loined = false;
 
 			gameData.hostCollection.forEach(function(value, key) {
 
-				var loined = false;
+
 
 				if (json.id === value.id &&
 					json.secure === value.secure && !value.disabled) {
@@ -169,14 +169,16 @@ wsServer.on('request', function(request) {
 				};
 
 
-				if (!loined) {
-					connection.sendUTF(JSON.stringify({
-						type: 'warning',
-						data: 'Password incorrect or host not response',
-						hosts: gameActions.hostArray()
-					}))
-				};
+
 			});
+
+			if (!loined) {
+				connection.sendUTF(JSON.stringify({
+					type: 'warning',
+					data: 'Password incorrect or host not response',
+					hosts: gameActions.hostArray()
+				}))
+			};
 
 
 
@@ -197,7 +199,9 @@ wsServer.on('request', function(request) {
 
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'updateClient',
-					data: json.data
+					data: json.data,
+					blt: json.blt,
+					bots: json.bots
 				}));
 			};
 
@@ -223,7 +227,7 @@ wsServer.on('request', function(request) {
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'initGame',
 					data: json.data,
-					canvasData: json.canvasData
+					bots: json.bots
 
 				}));
 			};
