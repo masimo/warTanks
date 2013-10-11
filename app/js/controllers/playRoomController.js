@@ -20,6 +20,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	$scope.chatHistory = '';
 	$scope.score = 0;
 	$scope.botCounter = 20;
+	$scope.allAmount = 20;
 	$scope.index = 0;
 	$scope.indexChat = 0;
 	$scope.client = {
@@ -157,9 +158,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		rect.toObject = (function(toObject) {
 			return function() {
 				return fabric.util.object.extend(toObject.call(this), {
+					newAttribute: this.newAttribute,
 					_id: this._id,
 					isNew: this.isNew,
-					isCrashed: this.isCrashed
+					isCrashed: this.isCrashed,
 				});
 			};
 		})(rect.toObject);
@@ -168,7 +170,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		rect.isCrashed = false;
 		rect._id = 'client_' + gamePlay.getNewUnitId();
 
+		rect.newAttribute = $.extend({}, gamePlay.getClientCtrl());
+
 		canvas.add(rect);
+
 
 		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
 			rect.fill = new fabric.Pattern({
@@ -209,6 +214,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		rect.toObject = (function(toObject) {
 			return function() {
 				return fabric.util.object.extend(toObject.call(this), {
+					newAttribute: this.newAttribute,
 					_id: this._id,
 					isNew: this.isNew,
 					isCrashed: this.isCrashed
@@ -219,6 +225,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		rect.isNew = true;
 		rect.isCrashed = false;
 		rect._id = 'bot_' + gamePlay.getNewUnitId();
+
+		rect.newAttribute = $.extend({}, gamePlay.getClientCtrl());
 
 		canvas.add(rect);
 
@@ -311,6 +319,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		canvas.loadFromJSON(JSON.stringify(botsData));
 
+		console.log(JSON.stringify(botsData));
+
 		setTimeout(function() {
 			canvas.renderAll()
 		}, 50);
@@ -323,8 +333,11 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		var defaultParams = {
 			left: null,
 			top: null,
-			angle: null,
+			angle: null
 		};
+
+		//We need to update client's unit position 
+		//gamePlay.updatePositionClient();
 
 		objCollection = data;
 
@@ -334,10 +347,18 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			} else if (value.isCrashed) {
 				gamePlay.removeThisUnit(value);
 			} else {
-				gamePlay.updateThisUnit(value, defaultParams);
+				gamePlay.updateThisUnit(defaultParams, value);
 			};
 
 		});
+
+		//var newUnitPos = gamePlay.extendReqiredKeys(defaultParams, objCollection.clients[0].bot);
+
+		//send info about client behavior
+		connection.send(JSON.stringify({
+			type: 'clientSend',
+			data: 'newUnitPos'
+		}));
 
 
 		canvas2.clear();
@@ -348,7 +369,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	};
 
-	
+
 	//Initialize game
 	$scope.start = function() {
 
@@ -358,7 +379,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 			connection.send(JSON.stringify({
 				type: 'sendHost',
-				data: objCollection,
+				data: null,
 				blt: canvas2,
 				bots: canvas
 			}));

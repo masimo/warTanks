@@ -220,8 +220,6 @@ wsServer.on('request', function(request) {
 
 		} else if (json.type == 'initGame') {
 
-			console.log(json.data);
-
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({

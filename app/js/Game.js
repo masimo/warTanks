@@ -27,14 +27,9 @@ var Game = function($scope) {
 	self.clientCtrl = {
 		type: 1,
 		speed: 2,
-		bulletSpeed: 8,
 		appearMode: true,
-		bulletInterval: null,
 		isMoving: false,
 		isShoot: false,
-		interval: null,
-		crashed: false,
-		newObj: true,
 		angle: 0,
 		score: 0
 	};
@@ -43,12 +38,8 @@ var Game = function($scope) {
 		type: 2,
 		speed: 1,
 		appearMode: true,
-		bulletSpeed: 15,
 		isMoving: true,
 		isShoot: false,
-		interval: null,
-		crashed: false,
-		newObj: true,
 		angle: 180,
 		score: 0
 	};
@@ -110,15 +101,12 @@ var Game = function($scope) {
 			curentBot.ctrl.isShoot = true;
 			//self.shoot(curentBot);
 		}
-
-
 	};
+
 
 	/*
 	 *	Move client
 	 */
-
-
 	self.update = function() {
 
 		for (var prop in self.objCollection) {
@@ -133,6 +121,9 @@ var Game = function($scope) {
 
 				//If bot stoped, then skeep 
 				if (!curentBot.ctrl.isMoving) return false;
+
+				//If bot destroed, then skeep 
+				if (curentBot.bot.isCrashed) return false;
 
 				var angle = curentBot.ctrl.angle,
 					left = curentBot.bot.left,
@@ -220,19 +211,11 @@ var Game = function($scope) {
 
 	};
 
-	self.updateClient = function() {
+	self.updatePositionClient = function() {
 
 
 		self.objCollection.clients.forEach(function(curentBot, i) {
 
-
-			if (curentBot.ctrl.isShoot) {
-
-				self.updateBullet(curentBot);
-			};
-
-			//Bots behave
-			if (curentBot.ctrl.type === 2) return false;
 
 			//If bot stoped, then skeep 
 			if (!curentBot.ctrl.isMoving) return false;
@@ -371,7 +354,7 @@ var Game = function($scope) {
 
 			self.objCollection[prop].forEach(function(value) {
 
-				if (curentBot.bot === value.bot) {
+				if (curentBot.bot === value.bot || value.bot.isCrashed) {
 					return false
 				};
 
@@ -419,17 +402,6 @@ var Game = function($scope) {
 			selectable: false
 		});
 
-		/*		//add additional atribute to rectanle
-		blt.toObject = (function(toObject) {
-			return function() {
-				return fabric.util.object.extend(toObject.call(this), {
-					_id: this._id
-				});
-			};
-		})(blt.toObject);
-
-		blt._id = 'bullet_' + gamePlay.getNewUnitId();*/
-
 		self.canvas2.add(blt);
 
 		//Change default angle of model
@@ -450,8 +422,9 @@ var Game = function($scope) {
 		if (0 > _y2 - _size2 || _y2 + _size2 >= CANVAS_HEIGHT ||
 			0 > _x2 - _size2 || _x2 + _size2 >= CANVAS_WIDTH) {
 
-			//Out of area
-
+			/*
+			 * Out of area
+			 */
 			self.canvas2.remove(curentBot.blt.bullet);
 			curentBot.blt = null;
 			curentBot.ctrl.isShoot = false;
@@ -465,7 +438,7 @@ var Game = function($scope) {
 			self.objCollection[prop].forEach(function(value, index) {
 
 				if (curentBot.bot === value.bot ||
-					value.ctrl.type === curentBot.ctrl.type) {
+					value.ctrl.type === curentBot.ctrl.type || value.bot.isCrashed) {
 					return false;
 				};
 
@@ -511,31 +484,7 @@ var Game = function($scope) {
 		//change bg of tank
 		crashedBot.bot.fill.offsetX = -36;
 
-
-		//Delete item from array
-		if (crashedBot.ctrl.isShoot) {
-
-			crashedBot.ctrl.crashed = true;
-			crashedBot.ctrl.isMoving = false;
-
-			var timer = setTimeout(function() {
-
-				if (crashedBot.blt !== null) {
-					self.canvas2.remove(crashedBot.blt.bullet);
-				}
-
-				//switch flag to check if this bot crashed
-				crashedBot.ctrl.crashed = true;
-
-				collection.splice(index, 1);
-
-			}, 1000);
-		} else {
-				collection.splice(index, 1);
-		};
-
 		//switch flag to check if this bot crashed
-		crashedBot.ctrl.crashed = true;
 		crashedBot.bot.isCrashed = true;
 
 		//Delete object from canvas with some delay
@@ -626,10 +575,9 @@ var Game = function($scope) {
 
 	self.addThisUnit = function(newUnit) {
 
-		var rect = new fabric.Rect(newUnit);
-		rect.isNew = false;
-		self.canvas.add(rect);
-
+		canvas.loadFromJSON({['objects':newUnit],"background":""});
+		self.resetNewObjects();
+		
 		setTimeout(function() {
 			self.canvas.renderAll();
 		}, 50);
@@ -649,7 +597,7 @@ var Game = function($scope) {
 		});
 	};
 
-	self.updateThisUnit = function(updateThis, destination) {
+	self.updateThisUnit = function(destination, updateThis) {
 		$.each(self.canvas.getObjects(), function(key, value) {
 			if (updateThis._id === value._id) {
 				var temporObj = self.extendReqiredKeys(destination, updateThis);
