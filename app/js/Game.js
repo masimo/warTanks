@@ -575,9 +575,15 @@ var Game = function($scope) {
 
 	self.addThisUnit = function(newUnit) {
 
-		canvas.loadFromJSON({['objects':newUnit],"background":""});
+		self.canvas.loadFromJSON(JSON.stringify({
+			'objects': [newUnit],
+			"background": ""
+		}));
+
 		self.resetNewObjects();
-		
+
+		console.log(self.canvas.getObjects());
+
 		setTimeout(function() {
 			self.canvas.renderAll();
 		}, 50);
