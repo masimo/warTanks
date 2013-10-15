@@ -113,6 +113,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			}
 		}));
 
+		//if you create this game then you host and youre index is [0]
+		$scope.index = 0;
+
 		$scope.gameMode = true;
 		$scope.createHostDlg = false;
 		$scope.modalDlg = false;
@@ -172,9 +175,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		rect.newAttribute = $.extend({}, gamePlay.getClientCtrl());
 
-		canvas.add(rect);
-
-
 		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
 			rect.fill = new fabric.Pattern({
 				source: img,
@@ -186,10 +186,12 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				_id: gamePlay.getId(),
 				'clientName': name,
 				bot: rect,
-				blt: null,
-				ctrl: gamePlay.extend({}, gamePlay.getClientCtrl())
+				blt: null
 			});
 		});
+
+		canvas.add(rect);
+
 	};
 	//Create bot
 	$scope.initBot = function() {
@@ -226,9 +228,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		rect.isCrashed = false;
 		rect._id = 'bot_' + gamePlay.getNewUnitId();
 
-		rect.newAttribute = $.extend({}, gamePlay.getClientCtrl());
+		rect.newAttribute = $.extend({}, gamePlay.getBotCtrl());
 
-		canvas.add(rect);
 
 
 		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
@@ -241,10 +242,12 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				_id: gamePlay.getId(),
 				'clientName': name,
 				bot: rect,
-				blt: null,
-				ctrl: gamePlay.extend({}, gamePlay.getBotCtrl())
+				blt: null
 			});
 		});
+
+		canvas.add(rect);
+
 		$scope.botCounter--;
 	};
 
@@ -293,7 +296,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 			connection.send(JSON.stringify({
 				type: 'initGame',
-				data: objCollection,
+				data: objCollection.clients,
 				bots: canvas
 			}));
 
@@ -306,7 +309,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		}, 2000);
 	};
 
-	function initRemoteClient(data, botsData) {
+	function initRemoteClient(data, botsData, index) {
 		gamePlay = new Game($scope);
 		canvas = gamePlay.getCanvas();
 		canvas2 = gamePlay.getCanvas2();
@@ -315,31 +318,36 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		//Asign data to game constructor
 		gamePlay.setCollection(objCollection);
 
-		objCollection = data;
+		objCollection.clients.push(data);
 
-		canvas.loadFromJSON(JSON.stringify(botsData));
+		botsData.objects.forEach(function(value) {
 
-		console.log(JSON.stringify(botsData));
-
-		setTimeout(function() {
-			canvas.renderAll()
-		}, 50);
-
-
+			if (value.isNew) {
+				gamePlay.addThisUnit(value);
+			}
+		});
 	};
 
 	function updateClient(data, bltData, botsData) {
 
-		var defaultParams = {
+		var defaultParamsForClient = {
 			left: null,
 			top: null,
-			angle: null
+			angle: null,
+			newAttribute: {
+				isMoving: null,
+				isShoot: null,
+				angle: null,
+			}
 		};
 
-		//We need to update client's unit position 
-		//gamePlay.updatePositionClient();
-
-		objCollection = data;
+		var defaultParams = {
+			newAttribute: {
+				isMoving: null,
+				isShoot: null,
+				angle: null
+			}
+		};
 
 		botsData.objects.forEach(function(value) {
 			if (value.isNew) {
@@ -347,18 +355,22 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			} else if (value.isCrashed) {
 				gamePlay.removeThisUnit(value);
 			} else {
-				gamePlay.updateThisUnit(defaultParams, value);
+				gamePlay.updateThisUnit(defaultParamsForClient, value);
 			};
-
 		});
 
-		//var newUnitPos = gamePlay.extendReqiredKeys(defaultParams, objCollection.clients[0].bot);
+		var newUnitPos = gamePlay.extendReqiredKeys(defaultParams, objCollection.clients[0].bot);
 
 		//send info about client behavior
 		connection.send(JSON.stringify({
 			type: 'clientSend',
-			data: 'newUnitPos'
+			data: newUnitPos
 		}));
+
+		if (objCollection.clients[0].bot.newAttribute.isShoot) {
+			objCollection.clients[0].bot.newAttribute.isShoot = false;
+		};
+
 
 
 		canvas2.clear();
@@ -366,6 +378,17 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		canvas2.renderAll();
 
 		canvas.renderAll();
+
+	};
+
+	function updateData(data, index) {
+
+		if (!data.newAttribute.isShoot && objCollection.clients[index].blt !== null) {
+			data.newAttribute.isShoot = true;
+		};
+
+		$.extend(true, objCollection.clients[index].bot, data);
+
 
 	};
 
@@ -379,9 +402,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 			connection.send(JSON.stringify({
 				type: 'sendHost',
-				data: null,
+				data: objCollection.clients,
 				blt: canvas2,
-				bots: canvas
+				bots: canvas,
 			}));
 
 			gamePlay.resetNewObjects();
@@ -517,6 +540,9 @@ connection.send(json);
 		} else if (json.type == 'initGame') {
 
 			initRemoteClient(json.data, json.bots);
+		} else if (json.type === 'clientSend') {
+
+			updateData(json.data, json.index);
 		};
 
 		//canvas.renderAll();

@@ -8,6 +8,9 @@ var fs = require('fs');
 
 var SOCKET_PORT = 1337;
 
+var clientSize = 0;
+var hostSize = 0;
+
 var DataActions = require('./dataActions').DataActions;
 
 var HOSTS = '/getHost',
@@ -33,6 +36,9 @@ exports.start = function(PORT, STATIC_DIR) {
 	app.post('/hosts', function(req, res, next) { //delete this
 
 		console.log(gameData.hostCollection);
+
+		console.log('Client: ' + clientSize);
+		console.log('Host: ' + hostSize);
 
 		//var obj = JSON.stringify(hostCollection);
 		res.send('done');
@@ -78,8 +84,6 @@ wsServer.on('request', function(request) {
 		data: index.chat
 	}));
 
-	console.log(index.chat);
-
 
 
 	// user sent some message
@@ -94,7 +98,11 @@ wsServer.on('request', function(request) {
 			console.log('Bad json')
 		}
 
+
+
 		if (json.type == 'setName') {
+
+			hostSize += JSON.stringify(json).length;
 
 			userName = json.nickName;
 			var timeNow = new Date();
@@ -108,7 +116,7 @@ wsServer.on('request', function(request) {
 			}));
 		} else if (json.type == 'createHost') {
 
-
+			hostSize += JSON.stringify(json).length;
 
 			//Create host
 			var hostInit = gameData.hostCollection.push(json.data) - 1;
@@ -141,8 +149,9 @@ wsServer.on('request', function(request) {
 
 		} else if (json.type == 'joinToHost') {
 
-			//console.log(index.chat);
+			hostSize += JSON.stringify(json).length;
 
+			
 			//Create host
 
 			var loined = false;
@@ -184,6 +193,8 @@ wsServer.on('request', function(request) {
 
 		} else if (json.type == 'gameChatMsg') {
 
+			hostSize += JSON.stringify(json).length;
+
 			gameData.hostCollection[index.host].clients.forEach(function(value) {
 				value.sendUTF(JSON.stringify({
 					type: 'gameChatMsg',
@@ -193,42 +204,59 @@ wsServer.on('request', function(request) {
 
 		} else if (json.type == 'sendHost') {
 
-			gameData.hostCollection[index.host].objCollection = json.data;
-
+			hostSize += JSON.stringify(json).length;
+			
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'updateClient',
-					data: json.data,
+					data: json.data[i],
 					blt: json.blt,
 					bots: json.bots
 				}));
 			};
+			
 
 
-		} else if (json.type == 'sendClient') {
+		} else if (json.type == 'clientSend') {
 
-			gameData.hostCollection[index.host].objCollection.clients[index.client] = json.data;
 
-			gameData.hostCollection[index.host].clients.forEach(function(value) {
-				value.sendUTF(JSON.stringify({
-					type: 'renderAll',
-					data: gameData.hostCollection[index.host].objCollection
-				}));
-			});
+			clientSize += JSON.stringify(json).length;
+
+
+			gameData.hostCollection[index.host].clients[0].sendUTF(JSON.stringify({
+				type: 'clientSend',
+				data: json.data,
+				index: index.client
+			}));
+
 
 
 		} else if (json.type == 'initGame') {
+
+			hostSize += JSON.stringify(json).length;
+
+			gameData.hostCollection[index.host].disabled = true;
 
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'initGame',
-					data: json.data,
-					bots: json.bots
-
+					data: json.data[i],
+					bots: json.bots,
+					index: index.client
 				}));
 			};
+
+			var host = JSON.stringify({
+				type: 'hostArray',
+				data: gameActions.hostArray()
+			});
+			gameData.clients.forEach(function(value) {
+				value.sendUTF(host);
+			});
+
+			
 		};
 	});
 

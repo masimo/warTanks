@@ -51,7 +51,6 @@ var Game = function($scope) {
 		angle: 180
 	};
 
-
 	//User interaction 
 	window.onkeyup = function(e) {
 		var key = e.keyCode;
@@ -61,7 +60,7 @@ var Game = function($scope) {
 		if (key >= 37 && key <= 40) {
 
 			// Switch move flag
-			curentBot.ctrl.isMoving = false;
+			curentBot.bot.newAttribute.isMoving = false;
 
 		}
 
@@ -74,32 +73,30 @@ var Game = function($scope) {
 		var curentBot = self.objCollection.clients[clientIndex];
 
 		//Check if it move is moving
-		if (curentBot.ctrl.isMoving) return false;
+		if (curentBot.bot.newAttribute.isMoving) return false;
 
 		//Check if arrow pressed
 		if (key === 37) {
 
-			curentBot.ctrl.isMoving = true;
-			curentBot.ctrl.angle = 270;
+			curentBot.bot.newAttribute.isMoving = true;
+			curentBot.bot.newAttribute.angle = 270;
 		} else if (key === 38) {
 
-			curentBot.ctrl.isMoving = true;
-			curentBot.ctrl.angle = 0;
+			curentBot.bot.newAttribute.isMoving = true;
+			curentBot.bot.newAttribute.angle = 0;
 		} else if (key === 39) {
 
-			curentBot.ctrl.isMoving = true;
-			curentBot.ctrl.angle = 90;
+			curentBot.bot.newAttribute.isMoving = true;
+			curentBot.bot.newAttribute.angle = 90;
 		} else if (key === 40) {
 
-			curentBot.ctrl.isMoving = true;
-			curentBot.ctrl.angle = 180;
+			curentBot.bot.newAttribute.isMoving = true;
+			curentBot.bot.newAttribute.angle = 180;
 		};
 
-		if (key === 32 && !curentBot.ctrl.isShoot) {
+		if (key === 32 && !curentBot.bot.newAttribute.isShoot) {
 
-			self.shoot(curentBot);
-			curentBot.ctrl.isShoot = true;
-			//self.shoot(curentBot);
+			curentBot.bot.newAttribute.isShoot = true;
 		}
 	};
 
@@ -113,39 +110,43 @@ var Game = function($scope) {
 
 			self.objCollection[prop].forEach(function(curentBot, i) {
 
+				if (curentBot.bot.newAttribute.type === 1 && i === 1) {
+					console.log(curentBot.bot.newAttribute.isShoot);
+				};
 
-				if (curentBot.ctrl.isShoot) {
+
+				if (curentBot.bot.newAttribute.isShoot) {
+
+					if (curentBot.blt === null) {
+						self.shoot(curentBot);
+					};
 
 					self.updateBullet(curentBot);
 				};
 
-				//If bot stoped, then skeep 
-				if (!curentBot.ctrl.isMoving) return false;
+				//If bot stoped, then skeep
+				if (!curentBot.bot.newAttribute.isMoving) return false;
 
-				//If bot destroed, then skeep 
+				//If bot destroed, then skeep
 				if (curentBot.bot.isCrashed) return false;
 
-				var angle = curentBot.ctrl.angle,
+				var angle = curentBot.bot.newAttribute.angle,
 					left = curentBot.bot.left,
 					top = curentBot.bot.top,
 					topOld = top,
 					leftOld = left;
 
 				//Bots behave
-				if (curentBot.ctrl.type === 2) {
+				if (curentBot.bot.newAttribute.type === 2) {
 
 					//if true change direction
 					if (0.01 > Math.random()) {
-						angle = curentBot.ctrl.angle = self.rdAng();
+						angle = curentBot.bot.newAttribute.angle = self.rdAng();
 					}
 
 					//if true then shoot!
-					if (0.01 > Math.random() && !curentBot.ctrl.isShoot) {
-
-						self.shoot(curentBot);
-						curentBot.ctrl.isShoot = true;
-
-						//shoot
+					if (0.01 > Math.random()) {
+						curentBot.bot.newAttribute.isShoot = true;
 					}
 
 				};
@@ -154,45 +155,45 @@ var Game = function($scope) {
 				if (angle === 0 || angle === 180) {
 
 					//Calculate top position of obj
-					top = angle < 180 ? top - curentBot.ctrl.speed : top + curentBot.ctrl.speed;
+					top = angle < 180 ? top - curentBot.bot.newAttribute.speed : top + curentBot.bot.newAttribute.speed;
 
 					var collide = self.checkCollision(left, top, curentBot);
 
 
-					if (!collide && curentBot.ctrl.appearMode) {
-						curentBot.ctrl.appearMode = false;
+					if (!collide && curentBot.bot.newAttribute.appearMode) {
+						curentBot.bot.newAttribute.appearMode = false;
 					};
 
 					//Check also if it just apper on map
-					if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
+					if (collide.type === 2 && !curentBot.bot.newAttribute.appearMode || collide.type == 1) {
 
 						top = topOld;
 
 						//If  this bot change the ange
-						if (curentBot.ctrl.type === 2) {
-							curentBot.ctrl.angle = self.rdAng(angle);
+						if (curentBot.bot.newAttribute.type === 2) {
+							curentBot.bot.newAttribute.angle = self.rdAng(angle);
 						};
 					};
 
 				} else {
 
 					//Calculate left position of obj
-					left = angle < 180 ? left + curentBot.ctrl.speed : left - curentBot.ctrl.speed;
+					left = angle < 180 ? left + curentBot.bot.newAttribute.speed : left - curentBot.bot.newAttribute.speed;
 
 					var collide = self.checkCollision(left, top, curentBot);
 
-					if (!collide && curentBot.ctrl.appearMode) {
-						curentBot.ctrl.appearMode = false;
+					if (!collide && curentBot.bot.newAttribute.appearMode) {
+						curentBot.bot.newAttribute.appearMode = false;
 					};
 
 					//Check also if it just apper on map
-					if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
+					if (collide.type === 2 && !curentBot.bot.newAttribute.appearMode || collide.type == 1) {
 
 						left = leftOld;
 
 						//If  this bot change the ange
-						if (curentBot.ctrl.type === 2) {
-							curentBot.ctrl.angle = self.rdAng(angle);
+						if (curentBot.bot.newAttribute.type === 2) {
+							curentBot.bot.newAttribute.angle = self.rdAng(angle);
 						};
 					};
 
@@ -202,91 +203,12 @@ var Game = function($scope) {
 				curentBot.bot.set({
 					left: left,
 					top: top,
-					angle: curentBot.ctrl.angle
+					angle: curentBot.bot.newAttribute.angle
 				});
 
 
 			});
 		}
-
-	};
-
-	self.updatePositionClient = function() {
-
-
-		self.objCollection.clients.forEach(function(curentBot, i) {
-
-
-			//If bot stoped, then skeep 
-			if (!curentBot.ctrl.isMoving) return false;
-
-
-			var angle = curentBot.ctrl.angle,
-				left = curentBot.bot.left,
-				top = curentBot.bot.top,
-				topOld = top,
-				leftOld = left;
-
-
-
-			//Check the direction
-			if (angle === 0 || angle === 180) {
-
-				//Calculate top position of obj
-				top = angle < 180 ? top - curentBot.ctrl.speed : top + curentBot.ctrl.speed;
-
-				var collide = self.checkCollision(left, top, curentBot);
-
-
-				if (!collide && curentBot.ctrl.appearMode) {
-					curentBot.ctrl.appearMode = false;
-				};
-
-				//Check also if it just apper on map
-				if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
-
-					top = topOld;
-
-					//If  this bot change the ange
-					if (curentBot.ctrl.type === 2) {
-						curentBot.ctrl.angle = self.rdAng(angle);
-					};
-				};
-
-			} else {
-
-				//Calculate left position of obj
-				left = angle < 180 ? left + curentBot.ctrl.speed : left - curentBot.ctrl.speed;
-
-				var collide = self.checkCollision(left, top, curentBot);
-
-				if (!collide && curentBot.ctrl.appearMode) {
-					curentBot.ctrl.appearMode = false;
-				};
-
-				//Check also if it just apper on map
-				if (collide.type === 2 && !curentBot.ctrl.appearMode || collide.type == 1) {
-
-					left = leftOld;
-
-					//If  this bot change the ange
-					if (curentBot.ctrl.type === 2) {
-						curentBot.ctrl.angle = self.rdAng(angle);
-					};
-				};
-
-			};
-
-
-			curentBot.bot.set({
-				left: left,
-				top: top,
-				angle: curentBot.ctrl.angle
-			});
-
-
-		});
-
 
 	};
 
@@ -427,7 +349,7 @@ var Game = function($scope) {
 			 */
 			self.canvas2.remove(curentBot.blt.bullet);
 			curentBot.blt = null;
-			curentBot.ctrl.isShoot = false;
+			curentBot.bot.newAttribute.isShoot = false;
 
 			return false
 
@@ -438,7 +360,7 @@ var Game = function($scope) {
 			self.objCollection[prop].forEach(function(value, index) {
 
 				if (curentBot.bot === value.bot ||
-					value.ctrl.type === curentBot.ctrl.type || value.bot.isCrashed) {
+					value.bot.newAttribute.type === curentBot.bot.newAttribute.type || value.bot.isCrashed) {
 					return false;
 				};
 
@@ -459,13 +381,13 @@ var Game = function($scope) {
 
 					self.explode(value, self.objCollection[prop], index);
 
-					if (curentBot.ctrl.type == 1) {
-						$scope.score = curentBot.ctrl.score += 1;
+					if (curentBot.bot.newAttribute.type == 1) {
+						$scope.score = curentBot.bot.newAttribute.score += 1;
 					}
 
 					self.canvas2.remove(curentBot.blt.bullet);
 					curentBot.blt = null;
-					curentBot.ctrl.isShoot = false;
+					curentBot.bot.newAttribute.isShoot = false;
 
 					return true;
 
@@ -575,19 +497,15 @@ var Game = function($scope) {
 
 	self.addThisUnit = function(newUnit) {
 
-		self.canvas.loadFromJSON(JSON.stringify({
-			'objects': [newUnit],
-			"background": ""
-		}));
+		//We need to know if the object is loaded on host
+		if (typeof newUnit.fill !== 'object') {
+			return false
+		};
+
+		//Add new tank to canvas and render it
+		self.canvas.add(new fabric.Rect(newUnit)).renderAll();
 
 		self.resetNewObjects();
-
-		console.log(self.canvas.getObjects());
-
-		setTimeout(function() {
-			self.canvas.renderAll();
-		}, 50);
-
 
 	};
 	self.removeThisUnit = function(removeThis) {
@@ -606,6 +524,7 @@ var Game = function($scope) {
 	self.updateThisUnit = function(destination, updateThis) {
 		$.each(self.canvas.getObjects(), function(key, value) {
 			if (updateThis._id === value._id) {
+
 				var temporObj = self.extendReqiredKeys(destination, updateThis);
 				$.extend(true, value, temporObj);
 			};
@@ -615,11 +534,41 @@ var Game = function($scope) {
 	self.resetNewObjects = function() {
 
 		$.each(self.canvas.getObjects(), function(key, value) {
-			if (value.isNew) {
+			if (value.isNew && typeof value.fill === 'object') {
 				value.isNew = false;
 			};
 		});
 	}
+	self.minimizeClients = function() {
+		var clients = [];
+
+		objCollection.clients.forEach(function(valur, key) {
+			if (value.isNew) {
+				clients.push(value);
+			} else if (value.isCrashed) {
+				clients.push(self.extendReqiredKeys({
+					_id: null,
+					isCrashed: null
+				}, value));
+			} else {
+				var defaultParamsForClient = {
+					_id: null,
+					left: null,
+					top: null,
+					angle: null,
+					newAttribute: {
+						isMoving: null,
+						isShoot: null,
+						angle: null,
+					}
+				};
+				clients.push(self.extendReqiredKeys(defaultParamsForClient, value));
+			};
+
+		});
+
+		return clients;
+	};
 
 	self.extendReqiredKeys = function(destination, source) {
 
@@ -627,7 +576,8 @@ var Game = function($scope) {
 			if (source[property] && source[property].constructor &&
 				source[property].constructor === Object && property in destination) {
 				destination[property] = destination[property] || {};
-				arguments.callee(destination[property], source[property]);
+				self.extendReqiredKeys(destination[property], source[property]);
+
 			} else if (property in destination) {
 				destination[property] = source[property];
 			}
