@@ -23,10 +23,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	$scope.allAmount = 20;
 	$scope.index = 0;
 	$scope.indexChat = 0;
-	$scope.client = {
-		clientType: 'client'
-	};
 	$scope.gameInterval = null;
+
 	// Dialogs
 	$scope.modalDlg = false;
 	$scope.createHostDlg = false;
@@ -134,7 +132,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		}
 
 		//Bot initialization
-		for (var i = 0, len = 3; i < len; i++) {
+		for (var i = 0, len = $scope.allAmount; i < len; i++) {
 			$scope.initBot();
 		};
 
@@ -170,6 +168,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		})(rect.toObject);
 
 		rect.isNew = true;
+		rect.playMode = true;
 		rect.isCrashed = false;
 		rect._id = 'client_' + gamePlay.getNewUnitId();
 
@@ -190,9 +189,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			});
 		});
 
-		canvas.add(rect);
+		//canvas.add(rect);
 
 	};
+
 	//Create bot
 	$scope.initBot = function() {
 		var name = rdData.names.slice(0).sort(function() {
@@ -225,6 +225,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		})(rect.toObject);
 
 		rect.isNew = true;
+		rect.playMode = false;
 		rect.isCrashed = false;
 		rect._id = 'bot_' + gamePlay.getNewUnitId();
 
@@ -246,7 +247,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			});
 		});
 
-		canvas.add(rect);
+		//canvas.add(rect);
 
 		$scope.botCounter--;
 	};
@@ -290,23 +291,24 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		$scope.startGame();
 
-		setTimeout(function() {
-
-			canvas.renderAll();
+		//check if all objects loaded and go next or err
+		gamePlay.gameLoader(function(initData) {
 
 			connection.send(JSON.stringify({
 				type: 'initGame',
-				data: objCollection.clients,
-				bots: canvas
+				data: initData
 			}));
 
-			gamePlay.resetNewObjects();
+			//gamePlay.resetNewObjects();
+			canvas.renderAll();
 
-		}, 500);
+			setTimeout(function() {
+				$scope.start();
+			}, 2000);
 
-		setTimeout(function() {
-			$scope.start();
-		}, 2000);
+		});
+
+
 	};
 
 	function initRemoteClient(data, botsData, index) {
@@ -398,7 +400,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		$scope.gameInterval = setInterval(function() {
 			gamePlay.update();
-
 
 			connection.send(JSON.stringify({
 				type: 'sendHost',

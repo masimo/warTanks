@@ -11,6 +11,8 @@ var SOCKET_PORT = 1337;
 var clientSize = 0;
 var hostSize = 0;
 
+var hostString = '';
+
 var DataActions = require('./dataActions').DataActions;
 
 var HOSTS = '/getHost',
@@ -39,6 +41,14 @@ exports.start = function(PORT, STATIC_DIR) {
 
 		console.log('Client: ' + clientSize);
 		console.log('Host: ' + hostSize);
+
+		fs.writeFile("../log/host.txt", hostString, function(err) {
+			if (err) {
+				console.log(err);
+			} else {
+				console.log("The file was saved!");
+			}
+		});
 
 		//var obj = JSON.stringify(hostCollection);
 		res.send('done');
@@ -103,6 +113,7 @@ wsServer.on('request', function(request) {
 		if (json.type == 'setName') {
 
 			hostSize += JSON.stringify(json).length;
+			hostString += JSON.stringify(json);
 
 			userName = json.nickName;
 			var timeNow = new Date();
@@ -117,6 +128,7 @@ wsServer.on('request', function(request) {
 		} else if (json.type == 'createHost') {
 
 			hostSize += JSON.stringify(json).length;
+			hostString += JSON.stringify(json);
 
 			//Create host
 			var hostInit = gameData.hostCollection.push(json.data) - 1;
@@ -150,8 +162,9 @@ wsServer.on('request', function(request) {
 		} else if (json.type == 'joinToHost') {
 
 			hostSize += JSON.stringify(json).length;
+			hostString += JSON.stringify(json);
 
-			
+
 			//Create host
 
 			var loined = false;
@@ -194,6 +207,7 @@ wsServer.on('request', function(request) {
 		} else if (json.type == 'gameChatMsg') {
 
 			hostSize += JSON.stringify(json).length;
+			hostString += JSON.stringify(json);
 
 			gameData.hostCollection[index.host].clients.forEach(function(value) {
 				value.sendUTF(JSON.stringify({
@@ -205,7 +219,8 @@ wsServer.on('request', function(request) {
 		} else if (json.type == 'sendHost') {
 
 			hostSize += JSON.stringify(json).length;
-			
+			hostString += JSON.stringify(json);
+
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
@@ -215,7 +230,7 @@ wsServer.on('request', function(request) {
 					bots: json.bots
 				}));
 			};
-			
+
 
 
 		} else if (json.type == 'clientSend') {
@@ -235,6 +250,7 @@ wsServer.on('request', function(request) {
 		} else if (json.type == 'initGame') {
 
 			hostSize += JSON.stringify(json).length;
+			hostString += JSON.stringify(json);
 
 			gameData.hostCollection[index.host].disabled = true;
 
@@ -256,7 +272,7 @@ wsServer.on('request', function(request) {
 				value.sendUTF(host);
 			});
 
-			
+
 		};
 	});
 

@@ -541,6 +541,7 @@ var Game = function($scope) {
 	}
 	self.minimizeClients = function() {
 		var clients = [];
+		var defaultParamsForClient = {};
 
 		objCollection.clients.forEach(function(valur, key) {
 			if (value.isNew) {
@@ -551,7 +552,7 @@ var Game = function($scope) {
 					isCrashed: null
 				}, value));
 			} else {
-				var defaultParamsForClient = {
+				defaultParamsForClient = {
 					_id: null,
 					left: null,
 					top: null,
@@ -568,6 +569,35 @@ var Game = function($scope) {
 		});
 
 		return clients;
+	};
+
+	self.gameLoader = function(callBack) {
+		var isLoad = true;
+
+		setTimeout(function() {
+
+			$.each(self.objCollection, function() {
+
+				$(this).each(function() {
+
+					if (this.bot.fill !== 'object') {
+						console.log('Das not loaded');
+
+						//switch thumbler
+						isLoad = false;
+					};
+
+				});
+
+			});
+
+			if (isLoad) {
+				callBack(self.objCollection);
+			};
+
+
+		}, 500);
+
 	};
 
 	self.extendReqiredKeys = function(destination, source) {
