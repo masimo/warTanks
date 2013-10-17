@@ -225,16 +225,14 @@ wsServer.on('request', function(request) {
 
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'updateClient',
-					data: json.data[i],
-					blt: json.blt,
-					bots: json.bots
+					data: json.data,
+					blt: json.blt
 				}));
 			};
 
 
 
 		} else if (json.type == 'clientSend') {
-
 
 			clientSize += JSON.stringify(json).length;
 
@@ -258,9 +256,8 @@ wsServer.on('request', function(request) {
 
 				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'initGame',
-					data: json.data[i],
-					bots: json.bots,
-					index: index.client
+					data: json.data,
+					index: i
 				}));
 			};
 

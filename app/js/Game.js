@@ -16,6 +16,17 @@ var Game = function($scope) {
 	//Random angles
 	self.rdAngArr = [0, 90, 180, 270];
 
+	//default changes
+	self.defChang = {
+		_id: null,
+		left: null,
+		top: null,
+		angle: null,
+		isNew: null,
+		playMode: null,
+		isCrashed: null
+	};
+
 	// Cnvas 
 	self.canvas = new fabric.Canvas('playRoomField');
 	self.canvas2 = new fabric.Canvas('bulletsField');
@@ -55,12 +66,12 @@ var Game = function($scope) {
 	window.onkeyup = function(e) {
 		var key = e.keyCode;
 
-		var curentBot = self.objCollection.clients[clientIndex];
+		var curentBot = self.objCollection.clients[clientIndex].bot.newAttribute;
 
 		if (key >= 37 && key <= 40) {
 
 			// Switch move flag
-			curentBot.bot.newAttribute.isMoving = false;
+			curentBot.isMoving = false;
 
 		}
 
@@ -70,33 +81,33 @@ var Game = function($scope) {
 	window.onkeydown = function(e) {
 		var key = e.keyCode;
 
-		var curentBot = self.objCollection.clients[clientIndex];
+		var curentBot = self.objCollection.clients[clientIndex].bot.newAttribute;
 
 		//Check if it move is moving
-		if (curentBot.bot.newAttribute.isMoving) return false;
+		if (curentBot.isMoving) return false;
 
 		//Check if arrow pressed
 		if (key === 37) {
 
-			curentBot.bot.newAttribute.isMoving = true;
-			curentBot.bot.newAttribute.angle = 270;
+			curentBot.isMoving = true;
+			curentBot.angle = 270;
 		} else if (key === 38) {
 
-			curentBot.bot.newAttribute.isMoving = true;
-			curentBot.bot.newAttribute.angle = 0;
+			curentBot.isMoving = true;
+			curentBot.angle = 0;
 		} else if (key === 39) {
 
-			curentBot.bot.newAttribute.isMoving = true;
-			curentBot.bot.newAttribute.angle = 90;
+			curentBot.isMoving = true;
+			curentBot.angle = 90;
 		} else if (key === 40) {
 
-			curentBot.bot.newAttribute.isMoving = true;
-			curentBot.bot.newAttribute.angle = 180;
+			curentBot.isMoving = true;
+			curentBot.angle = 180;
 		};
 
-		if (key === 32 && !curentBot.bot.newAttribute.isShoot) {
+		if (key === 32 && !curentBot.isShoot) {
 
-			curentBot.bot.newAttribute.isShoot = true;
+			curentBot.isShoot = true;
 		}
 	};
 
@@ -106,109 +117,102 @@ var Game = function($scope) {
 	 */
 	self.update = function() {
 
-		for (var prop in self.objCollection) {
 
-			self.objCollection[prop].forEach(function(curentBot, i) {
+		self.everyUnit(function(curentBot, key) {
 
-				if (curentBot.bot.newAttribute.type === 1 && i === 1) {
-					console.log(curentBot.bot.newAttribute.isShoot);
+			//does not active unit
+			if (!curentBot.bot.playMode && !curentBot.bot.isCrashed) return false;
+
+			if (curentBot.bot.newAttribute.isShoot) {
+
+				if (curentBot.blt === null) {
+					self.shoot(curentBot);
 				};
 
+				self.updateBullet(curentBot);
+			};
 
-				if (curentBot.bot.newAttribute.isShoot) {
+			//If bot destroed, then skeep
+			if (curentBot.bot.isCrashed) return false;
 
-					if (curentBot.blt === null) {
-						self.shoot(curentBot);
-					};
+			//If bot stoped, then skeep
+			if (!curentBot.bot.newAttribute.isMoving) return false;
 
-					self.updateBullet(curentBot);
+			var angle = curentBot.bot.newAttribute.angle,
+				left = curentBot.bot.left,
+				top = curentBot.bot.top,
+				topOld = top,
+				leftOld = left;
+
+			//Bots behave
+			if (curentBot.bot.newAttribute.type === 2) {
+
+				//if true change direction
+				if (0.01 > Math.random()) {
+					angle = curentBot.bot.newAttribute.angle = self.rdAng();
+				}
+
+				//if true then shoot!
+				if (0.01 > Math.random()) {
+					curentBot.bot.newAttribute.isShoot = true;
+				}
+
+			};
+
+			//Check the direction
+			if (angle === 0 || angle === 180) {
+
+				//Calculate top position of obj
+				top = angle < 180 ? top - curentBot.bot.newAttribute.speed : top + curentBot.bot.newAttribute.speed;
+
+				var collide = self.checkCollision(left, top, curentBot);
+
+
+				if (!collide && curentBot.bot.newAttribute.appearMode) {
+					curentBot.bot.newAttribute.appearMode = false;
 				};
 
-				//If bot stoped, then skeep
-				if (!curentBot.bot.newAttribute.isMoving) return false;
+				//Check also if it just apper on map
+				if (collide.type === 2 && !curentBot.bot.newAttribute.appearMode || collide.type == 1) {
 
-				//If bot destroed, then skeep
-				if (curentBot.bot.isCrashed) return false;
+					top = topOld;
 
-				var angle = curentBot.bot.newAttribute.angle,
-					left = curentBot.bot.left,
-					top = curentBot.bot.top,
-					topOld = top,
-					leftOld = left;
-
-				//Bots behave
-				if (curentBot.bot.newAttribute.type === 2) {
-
-					//if true change direction
-					if (0.01 > Math.random()) {
-						angle = curentBot.bot.newAttribute.angle = self.rdAng();
-					}
-
-					//if true then shoot!
-					if (0.01 > Math.random()) {
-						curentBot.bot.newAttribute.isShoot = true;
-					}
-
+					//If  this bot change the ange
+					if (curentBot.bot.newAttribute.type === 2) {
+						curentBot.bot.newAttribute.angle = self.rdAng(angle);
+					};
 				};
 
-				//Check the direction
-				if (angle === 0 || angle === 180) {
+			} else {
 
-					//Calculate top position of obj
-					top = angle < 180 ? top - curentBot.bot.newAttribute.speed : top + curentBot.bot.newAttribute.speed;
+				//Calculate left position of obj
+				left = angle < 180 ? left + curentBot.bot.newAttribute.speed : left - curentBot.bot.newAttribute.speed;
 
-					var collide = self.checkCollision(left, top, curentBot);
+				var collide = self.checkCollision(left, top, curentBot);
 
-
-					if (!collide && curentBot.bot.newAttribute.appearMode) {
-						curentBot.bot.newAttribute.appearMode = false;
-					};
-
-					//Check also if it just apper on map
-					if (collide.type === 2 && !curentBot.bot.newAttribute.appearMode || collide.type == 1) {
-
-						top = topOld;
-
-						//If  this bot change the ange
-						if (curentBot.bot.newAttribute.type === 2) {
-							curentBot.bot.newAttribute.angle = self.rdAng(angle);
-						};
-					};
-
-				} else {
-
-					//Calculate left position of obj
-					left = angle < 180 ? left + curentBot.bot.newAttribute.speed : left - curentBot.bot.newAttribute.speed;
-
-					var collide = self.checkCollision(left, top, curentBot);
-
-					if (!collide && curentBot.bot.newAttribute.appearMode) {
-						curentBot.bot.newAttribute.appearMode = false;
-					};
-
-					//Check also if it just apper on map
-					if (collide.type === 2 && !curentBot.bot.newAttribute.appearMode || collide.type == 1) {
-
-						left = leftOld;
-
-						//If  this bot change the ange
-						if (curentBot.bot.newAttribute.type === 2) {
-							curentBot.bot.newAttribute.angle = self.rdAng(angle);
-						};
-					};
-
+				if (!collide && curentBot.bot.newAttribute.appearMode) {
+					curentBot.bot.newAttribute.appearMode = false;
 				};
 
+				//Check also if it just apper on map
+				if (collide.type === 2 && !curentBot.bot.newAttribute.appearMode || collide.type == 1) {
 
-				curentBot.bot.set({
-					left: left,
-					top: top,
-					angle: curentBot.bot.newAttribute.angle
-				});
+					left = leftOld;
 
+					//If  this bot change the ange
+					if (curentBot.bot.newAttribute.type === 2) {
+						curentBot.bot.newAttribute.angle = self.rdAng(angle);
+					};
+				};
 
+			};
+
+			curentBot.bot.set({
+				left: left,
+				top: top,
+				angle: curentBot.bot.newAttribute.angle
 			});
-		}
+		});
 
 	};
 
@@ -408,7 +412,7 @@ var Game = function($scope) {
 
 		//switch flag to check if this bot crashed
 		crashedBot.bot.isCrashed = true;
-
+		
 		//Delete object from canvas with some delay
 		var timer = setTimeout(function() {
 
@@ -494,31 +498,70 @@ var Game = function($scope) {
 		return _id;
 
 	};
-
 	self.addThisUnit = function(newUnit) {
 
-		//We need to know if the object is loaded on host
-		if (typeof newUnit.fill !== 'object') {
-			return false
-		};
+		newUnit.isNew = false;
 
 		//Add new tank to canvas and render it
-		self.canvas.add(new fabric.Rect(newUnit)).renderAll();
-
-		self.resetNewObjects();
-
+		self.canvas.add(newUnit);
 	};
-	self.removeThisUnit = function(removeThis) {
 
-		$.each(self.canvas.getObjects(), function(key, value) {
-			if (removeThis._id === value._id) {
-				value.fill.offsetX = -36;
+	self.getAllChanges = function(callBack) {
 
-				setTimeout(function() {
-					self.canvas.remove(value);
-				}, 500);
+		var allChanges = [],
+			botAmount = 0;
+
+
+		//through every unit
+		self.everyUnit(function(unit) {
+			if (unit.bot.playMode) {
+
+				var defChang = $.extend({}, self.defChang);
+				//get all required keys and add it to Array
+				allChanges.push(self.extendReqiredKeys(defChang, unit.bot));
+
+				++botAmount;
+
 			};
 		});
+
+		//If some bot crashed then add one more
+
+		if (botAmount < 4) {
+			
+			for (var i = 0; i < self.objCollection.bots.length; ++i) {
+				
+				var value = self.objCollection.bots[i];
+				
+				if (!value.bot.playMode && !value.bot.isCrashed) {
+
+					value.bot.isNew = true;
+					value.bot.playMode = true;
+
+					return false;
+				};
+			};
+
+
+		};
+
+		callBack(allChanges);
+	};
+	self.everyUnit = function(callBack) {
+		$.each(self.objCollection, function() {
+			$(this).each(function(value, key) {
+				callBack(this, key);
+			});
+		});
+	}
+
+	self.removeThisUnit = function(removeThis) {
+
+		removeThis.fill.offsetX = -36;
+
+		setTimeout(function() {
+			self.canvas.remove(removeThis);
+		}, 500);
 	};
 
 	self.updateThisUnit = function(destination, updateThis) {
@@ -531,73 +574,45 @@ var Game = function($scope) {
 		});
 	};
 
-	self.resetNewObjects = function() {
-
-		$.each(self.canvas.getObjects(), function(key, value) {
-			if (value.isNew && typeof value.fill === 'object') {
-				value.isNew = false;
-			};
-		});
-	}
-	self.minimizeClients = function() {
-		var clients = [];
-		var defaultParamsForClient = {};
-
-		objCollection.clients.forEach(function(valur, key) {
-			if (value.isNew) {
-				clients.push(value);
-			} else if (value.isCrashed) {
-				clients.push(self.extendReqiredKeys({
-					_id: null,
-					isCrashed: null
-				}, value));
-			} else {
-				defaultParamsForClient = {
-					_id: null,
-					left: null,
-					top: null,
-					angle: null,
-					newAttribute: {
-						isMoving: null,
-						isShoot: null,
-						angle: null,
-					}
-				};
-				clients.push(self.extendReqiredKeys(defaultParamsForClient, value));
-			};
-
-		});
-
-		return clients;
-	};
-
 	self.gameLoader = function(callBack) {
 		var isLoad = true;
 
 		setTimeout(function() {
 
-			$.each(self.objCollection, function() {
+			self.everyUnit(function(unit) {
 
-				$(this).each(function() {
+				if (typeof unit.bot.fill !== 'object') {
+					console.log('Das not loaded');
 
-					if (this.bot.fill !== 'object') {
-						console.log('Das not loaded');
-
-						//switch thumbler
-						isLoad = false;
-					};
-
-				});
+					//switch thumbler
+					isLoad = false;
+				};
 
 			});
 
 			if (isLoad) {
+				self.setGameMode();
+
+				//Go game!
 				callBack(self.objCollection);
+
+			};
+		}, 500);
+	};
+
+	self.setGameMode = function() {
+		var i = 0;
+		var botsArr = self.objCollection.bots;
+
+		for (i; i < botsArr.length; ++i) {
+			if (i >= 3) {
+				return false;
 			};
 
-
-		}, 500);
-
+			//Prepare first bot
+			botsArr[i].bot.playMode = true;
+			botsArr[i].bot.isNew = true;
+		};
 	};
 
 	self.extendReqiredKeys = function(destination, source) {
@@ -615,6 +630,9 @@ var Game = function($scope) {
 		return destination;
 
 	};
+	self.setClientIndex = function(index) {
+		clientIndex = index;
+	}
 
 	self.getBltCtrl = function() {
 		return self.extend({}, self.bulletCtrl);

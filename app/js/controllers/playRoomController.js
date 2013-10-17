@@ -31,6 +31,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	$scope.hostArray = [];
 
+	var oldClientPos = {};
+
 
 
 	//console.log(connection);
@@ -224,7 +226,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			};
 		})(rect.toObject);
 
-		rect.isNew = true;
+		rect.isNew = false;
 		rect.playMode = false;
 		rect.isCrashed = false;
 		rect._id = 'bot_' + gamePlay.getNewUnitId();
@@ -299,7 +301,16 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				data: initData
 			}));
 
-			//gamePlay.resetNewObjects();
+			//add object to hosts canvas
+			gamePlay.everyUnit(function(unit) {
+
+				if (unit.bot.isNew) {
+					canvas.add(unit.bot);
+					unit.bot.isNew = false;
+				}
+
+			});
+
 			canvas.renderAll();
 
 			setTimeout(function() {
@@ -311,37 +322,42 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	};
 
-	function initRemoteClient(data, botsData, index) {
+	function initRemoteClient(data, index) {
 		gamePlay = new Game($scope);
 		canvas = gamePlay.getCanvas();
 		canvas2 = gamePlay.getCanvas2();
 
+		//get data from host and asign it to this client
+		objCollection = data;
+
+		//set index 
+		$scope.index = index;
+		gamePlay.setClientIndex(index);
 
 		//Asign data to game constructor
 		gamePlay.setCollection(objCollection);
 
-		objCollection.clients.push(data);
 
-		botsData.objects.forEach(function(value) {
 
-			if (value.isNew) {
-				gamePlay.addThisUnit(value);
+		//Render all new bots
+		gamePlay.everyUnit(function(unit) {
+			//We need to know if the object is loaded on host
+			if (typeof unit.bot.fill !== 'object') {
+				return false
+				console.log('Unit not loaded "bad data"');
+			};
+
+			unit.bot = new fabric.Rect(unit.bot);
+
+			if (unit.bot.isNew) {
+				gamePlay.addThisUnit(unit.bot);
 			}
 		});
+
+		canvas.renderAll();
 	};
 
-	function updateClient(data, bltData, botsData) {
-
-		var defaultParamsForClient = {
-			left: null,
-			top: null,
-			angle: null,
-			newAttribute: {
-				isMoving: null,
-				isShoot: null,
-				angle: null,
-			}
-		};
+	function updateClient(data, bltData) {
 
 		var defaultParams = {
 			newAttribute: {
@@ -351,17 +367,30 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			}
 		};
 
-		botsData.objects.forEach(function(value) {
-			if (value.isNew) {
-				gamePlay.addThisUnit(value);
-			} else if (value.isCrashed) {
-				gamePlay.removeThisUnit(value);
-			} else {
-				gamePlay.updateThisUnit(defaultParamsForClient, value);
-			};
-		});
+		for (var i = 0; i < data.length; i++) {
 
-		var newUnitPos = gamePlay.extendReqiredKeys(defaultParams, objCollection.clients[0].bot);
+			gamePlay.everyUnit(function(unit) {
+
+				if (data[i]._id === unit.bot._id) {
+
+					$.extend(true, unit.bot, data[i]);
+
+					//check if this bot get in trouble
+					if (data[i].isNew) {
+						canvas.add(unit.bot);
+					};
+
+					if (data[i].isCrashed) {
+						gamePlay.removeThisUnit(unit.bot);
+					};
+				};
+			});
+		};
+
+		var clientBot = objCollection.clients[$scope.index].bot;
+
+		var newUnitPos = gamePlay.extendReqiredKeys(defaultParams, clientBot);
+
 
 		//send info about client behavior
 		connection.send(JSON.stringify({
@@ -369,10 +398,12 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			data: newUnitPos
 		}));
 
-		if (objCollection.clients[0].bot.newAttribute.isShoot) {
-			objCollection.clients[0].bot.newAttribute.isShoot = false;
-		};
 
+		//$.extend(oldClientPos, newUnitPos);
+
+		if (clientBot.newAttribute.isShoot) {
+			clientBot.newAttribute.isShoot = false;
+		};
 
 
 		canvas2.clear();
@@ -385,11 +416,13 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	function updateData(data, index) {
 
-		if (!data.newAttribute.isShoot && objCollection.clients[index].blt !== null) {
+		var client = objCollection.clients[index];
+
+		if (!data.newAttribute.isShoot && client.blt !== null) {
 			data.newAttribute.isShoot = true;
 		};
 
-		$.extend(true, objCollection.clients[index].bot, data);
+		$.extend(true, client.bot, data);
 
 
 	};
@@ -399,16 +432,32 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	$scope.start = function() {
 
 		$scope.gameInterval = setInterval(function() {
+
+			//add object to hosts canvas
+			gamePlay.everyUnit(function(unit) {
+
+				if (unit.bot.isNew) {
+					canvas.add(unit.bot);
+					unit.bot.isNew = false;
+				}
+
+				if (unit.bot.playMode && unit.bot.isCrashed) {
+					unit.bot.playMode = false;
+				}
+
+			});
+
+			//Update units
 			gamePlay.update();
 
-			connection.send(JSON.stringify({
-				type: 'sendHost',
-				data: objCollection.clients,
-				blt: canvas2,
-				bots: canvas,
-			}));
+			gamePlay.getAllChanges(function(changedUnit) {
 
-			gamePlay.resetNewObjects();
+				connection.send(JSON.stringify({
+					type: 'sendHost',
+					data: changedUnit,
+					blt: canvas2,
+				}));
+			});
 
 			canvas.renderAll();
 			canvas2.renderAll();
@@ -540,7 +589,7 @@ connection.send(json);
 
 		} else if (json.type == 'initGame') {
 
-			initRemoteClient(json.data, json.bots);
+			initRemoteClient(json.data, json.index);
 		} else if (json.type === 'clientSend') {
 
 			updateData(json.data, json.index);
