@@ -7,6 +7,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	var objCollection = [];
 
+	var dateNow = new Date().getTime(); // remove this
+
 	//Arrays of random data
 	var rdData = {
 		randomAngle: [0, 90, 180, 270],
@@ -297,33 +299,32 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			}
 		};
 
-		console.log(data);
 
-		_(objCollection).map(function(unit, index) {
+		_(data).map(function(remoteUnit, remoteindex) {
 
-			_(data).map(function(remoteUnit, remoteindex) {
+			if (remoteUnit.isNew) {
+
+				//check if this bot get in trouble
+				gamePlay.addThisUnit(remoteUnit, true)
+				
+				return;
+			};
+
+			_(objCollection).forEach(function(unit, index) {
+
+				if (dateNow + 2000 < new Date().getTime()) {
+
+					console.log(data, objCollection);
+					dateNow = new Date().getTime();
+				};
 
 				if (unit._id === remoteUnit._id) {
 
-					
-					//check if this bot get in trouble
-					if (remoteUnit.isNew) {
-						unit.isNew = false;
-						unit.isReady = true;
-
-						canvas.add(remoteUnit);
-
-						//set unit visible for engine
-						setTimeout(function() {
-							unit.playMode = true;
-						}, 500);
-					};
+					$.extend(true, unit, remoteUnit);
 
 					if (remoteUnit.isCrashed) {
 						gamePlay.removeThisUnit(unit);
 					};
-					
-					$.extend(true, unit, remoteUnit);
 				};
 			});
 		});

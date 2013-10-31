@@ -20,6 +20,7 @@ var Game = function($scope) {
 
 	//default changes
 	self.defChang = {
+		_id: null,
 		left: null,
 		top: null,
 		angle: null,
@@ -547,12 +548,16 @@ var Game = function($scope) {
 		}, 500);
 	};
 
-	self.addThisUnit = function(unit) {
+	self.addThisUnit = function(unit, addToObj) {
 
 		if (unit.isNew) {
 			unit.isNew = false;
 			unit = new fabric.Rect(unit);
 		}
+
+		if (addToObj) {
+			self.objCollection.push(remoteUnit)
+		};
 
 		//Add new tank to canvas and render it
 		self.canvas.add(unit);
