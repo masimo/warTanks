@@ -1,13 +1,12 @@
-'use strict';
 app.controller('playRoomController', function NormalModeController($scope, $http, $filter) {
+
+	'use strict';
 
 	var gamePlay,
 		canvas, canvas2;
 
-	var objCollection = {
-		clients: [],
-		bots: []
-	};
+	var objCollection = [];
+
 	//Arrays of random data
 	var rdData = {
 		randomAngle: [0, 90, 180, 270],
@@ -15,14 +14,15 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		names: ['Boris', 'Den', 'Lyolik', 'Bolik'],
 		leftPosition: [200, 400]
 	}
-	$scope.youHost = false;
-	$scope.startGameBtn = true;
+
 	$scope.chatHistory = '';
+	$scope.gameChatMsg = '';
+	$scope.startGameBtn = false;
+	$scope.hostId = '';
 	$scope.score = 0;
 	$scope.botCounter = 20;
 	$scope.allAmount = 20;
 	$scope.index = 0;
-	$scope.indexChat = 0;
 	$scope.gameInterval = null;
 
 	// Dialogs
@@ -31,267 +31,67 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	$scope.hostArray = [];
 
-	var oldClientPos = {};
-
-
-
-	//console.log(connection);
-	$scope.getHostArray = function() {
-		$http({
-			method: 'POST',
-			url: '/getHost'
-		}).
-		success(function(data, status, headers, config) {
-			$scope.hostArray = data;
-		}).
-		error(function(data, status, headers, config) {
-			console.log('crashed');
-		});
-	};
-
-	$scope.checkList = function() {
-
-		$http({
-			method: 'POST',
-			url: '/hosts'
-		}).
-		success(function(data, status, headers, config) {
-			console.log(data);
-		}).
-		error(function(data, status, headers, config) {
-			console.log('crashed');
-		});
-
-	};
-
-	$scope.joinToHost = function(data) {
-
-		var currentHost = {};
-
-
-		for (var i = 0, len = $scope.hostArray.length; i < len; i++) {
-
-			if ($scope.hostArray[i].id == data) {
-				currentHost = $scope.hostArray[i];
-				break;
-			};
-
-		};
-
-		currentHost.secure = null;
-
-		if (currentHost.secureType === 'protected') {
-			currentHost.secure = prompt('This host protected');
-		};
-
-		currentHost.type = 'joinToHost';
-
-		currentHost.myNickName = $scope.nickName;
-
-		connection.send(JSON.stringify(currentHost));
-
-	};
-
-
 
 	$scope.hostCreate = function() {
 
 		//check password
 		var pass = $scope.inputProtectCode || null;
 
-		connection.send(JSON.stringify({
+		var hostData = {
 			type: 'createHost',
 			data: {
 				id: null,
-				hostIndex: null,
-				secureType: pass !== null ? 'protected' : null, // protected or undefined
-				name: $scope.inputNameGame,
+				secureType: pass !== null ? 'protected' : null, // protected or null
+				name: $scope.nickName,
+				hostName: $scope.inputNameGame,
 				secure: pass,
 				objCollection: {},
 				clients: [],
 				disabled: false
 			}
-		}));
+		}
 
-		//if you create this game then you host and youre index is [0]
-		$scope.index = 0;
+		//send data about new host
+		connection.send(JSON.stringify(hostData));
+
+		//if you create this game then you host and your index is [0]
 
 		$scope.gameMode = true;
 		$scope.createHostDlg = false;
 		$scope.modalDlg = false;
-
 		$scope.gameChat = true;
-
-
-
+		$scope.startGameBtn = true;
 	};
+
+
+
+	$scope.joinToHost = function(data) {
+
+		var password = null;
+
+		_($scope.hostArray).map(function(value) {
+
+			if (value.id == data) {
+
+				if (value.secureType === 'protected') {
+					password = prompt('This host protected');
+				};
+
+				$.extend(true, value, {
+					type: 'joinToHost',
+					myNickName: $scope.nickName,
+					secure: password !== null ? password : null,
+				});
+
+				connection.send(JSON.stringify(value));
+			};
+
+		});
+	};
+
 
 	$scope.startGame = function() {
 
-		//Initialize client
-		for (var i = 0, len = 2; i < len; i++) {
-			initClient();
-		}
-
-		//Bot initialization
-		for (var i = 0, len = $scope.allAmount; i < len; i++) {
-			$scope.initBot();
-		};
-
-	}
-	//Init Clients
-
-	function initClient() {
-		var name = name || 'defaultName';
-		var self = this;
-		var pos = rdData.leftPosition.slice(0).sort(function() {
-			return Math.random() > 0.5;
-		}).shift();
-
-		var ofst = pos === 200 ? 0 : -48;
-
-		var rect = new fabric.Rect({
-			left: pos,
-			top: 575,
-			width: 36,
-			height: 48,
-		});
-
-		//add additional atribute to object
-		rect.toObject = (function(toObject) {
-			return function() {
-				return fabric.util.object.extend(toObject.call(this), {
-					newAttribute: this.newAttribute,
-					_id: this._id,
-					isNew: this.isNew,
-					isCrashed: this.isCrashed,
-				});
-			};
-		})(rect.toObject);
-
-		rect.isNew = true;
-		rect.playMode = true;
-		rect.isCrashed = false;
-		rect._id = 'client_' + gamePlay.getNewUnitId();
-
-		rect.newAttribute = $.extend({}, gamePlay.getClientCtrl());
-
-		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
-			rect.fill = new fabric.Pattern({
-				source: img,
-				repeat: 'no-repeat',
-				offsetX: 0,
-				offsetY: ofst
-			});
-			objCollection.clients.push({
-				_id: gamePlay.getId(),
-				'clientName': name,
-				bot: rect,
-				blt: null
-			});
-		});
-
-		//canvas.add(rect);
-
-	};
-
-	//Create bot
-	$scope.initBot = function() {
-		var name = rdData.names.slice(0).sort(function() {
-			return Math.random() > 0.5;
-		}).shift();
-		var pos = rdData.startPosition.slice(0).sort(function() {
-			return Math.random() > 0.5;
-		}).shift();
-		var angle = rdData.randomAngle.slice(0).sort(function() {
-			return Math.random() > 0.5;
-		}).shift();
-		var rect = new fabric.Rect({
-			left: pos,
-			top: 24,
-			width: 36,
-			height: 48,
-			angle: angle
-		});
-
-		//add additional atribute to object
-		rect.toObject = (function(toObject) {
-			return function() {
-				return fabric.util.object.extend(toObject.call(this), {
-					newAttribute: this.newAttribute,
-					_id: this._id,
-					isNew: this.isNew,
-					isCrashed: this.isCrashed
-				});
-			};
-		})(rect.toObject);
-
-		rect.isNew = false;
-		rect.playMode = false;
-		rect.isCrashed = false;
-		rect._id = 'bot_' + gamePlay.getNewUnitId();
-
-		rect.newAttribute = $.extend({}, gamePlay.getBotCtrl());
-
-
-
-		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
-			rect.fill = new fabric.Pattern({
-				source: img,
-				repeat: 'no-repeat',
-				offsetX: 0
-			});
-			objCollection.bots.push({
-				_id: gamePlay.getId(),
-				'clientName': name,
-				bot: rect,
-				blt: null
-			});
-		});
-
-		//canvas.add(rect);
-
-		$scope.botCounter--;
-	};
-
-	(function(window) {
-		var onEachFrame;
-		if (window.webkitRequestAnimationFrame) {
-			onEachFrame = function(cb) {
-				var _cb = function() {
-					cb();
-					webkitRequestAnimationFrame(_cb);
-				}
-				_cb();
-			};
-		} else if (window.mozRequestAnimationFrame) {
-			onEachFrame = function(cb) {
-				var _cb = function() {
-					cb();
-					mozRequestAnimationFrame(_cb);
-				}
-				_cb();
-			};
-		} else {
-			onEachFrame = function(cb) {
-				setInterval(cb, 1000 / 60);
-			}
-		}
-		window.onEachFrame = onEachFrame;
-	})(window);
-
-
-	//Create game with bots
-	$scope.initGame = function() {
-		gamePlay = new Game($scope);
-		canvas = gamePlay.getCanvas();
-		canvas2 = gamePlay.getCanvas2();
-
-
-		//Asign data to game constructor
-		gamePlay.setCollection(objCollection);
-
-		$scope.startGame();
 
 		//check if all objects loaded and go next or err
 		gamePlay.gameLoader(function(initData) {
@@ -301,25 +101,45 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				data: initData
 			}));
 
+			console.log(initData);
+
 			//add object to hosts canvas
 			gamePlay.everyUnit(function(unit) {
 
-				if (unit.bot.isNew) {
-					canvas.add(unit.bot);
-					unit.bot.isNew = false;
+				if (unit.isNew) {
+					canvas.add(unit);
+					unit.isNew = false;
 				}
-
 			});
 
 			canvas.renderAll();
 
 			setTimeout(function() {
-				$scope.start();
+				$scope.playGame();
 			}, 2000);
 
 		});
+	}
+
+	//Create game with bots
+	$scope.initGame = function() {
+		gamePlay = new Game($scope);
+		canvas = gamePlay.getCanvas();
+		canvas2 = gamePlay.getCanvas2();
 
 
+		//Assign data to game constructor
+		gamePlay.setCollection(objCollection);
+
+
+		var getClients = {
+			type: 'getAvalibleClients',
+			data: {
+				hostId: $scope.hostId
+			}
+		}
+
+		connection.send(JSON.stringify(getClients));
 	};
 
 	function initRemoteClient(data, index) {
@@ -342,24 +162,134 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		//Render all new bots
 		gamePlay.everyUnit(function(unit) {
 			//We need to know if the object is loaded on host
-			if (typeof unit.bot.fill !== 'object') {
+			if (typeof unit.fill !== 'object') {
 				return false
 				console.log('Unit not loaded "bad data"');
 			};
 
-			unit.bot = new fabric.Rect(unit.bot);
 
-			if (unit.bot.isNew) {
-				gamePlay.addThisUnit(unit.bot);
-			}
+			gamePlay.addThisUnit(unit);
+
 		});
 
 		canvas.renderAll();
 	};
 
+	// Initialize Clients
+
+	function initClient() {
+		var name = $scope.nickName || 'No name';
+		var self = this;
+		var pos = rdData.leftPosition.slice(0).sort(function() {
+			return Math.random() > 0.5;
+		}).shift();
+
+		var ofst = pos === 200 ? 0 : -48;
+
+		var rect = new fabric.Rect({
+			left: pos,
+			top: 575,
+			width: 36,
+			height: 48,
+		});
+
+		//add additional attribute to object
+		rect.toObject = (function(toObject) {
+			return function() {
+				return fabric.util.object.extend(toObject.call(this), {
+					newAttribute: this.newAttribute,
+					_id: this._id,
+					isNew: this.isNew,
+					isCrashed: this.isCrashed,
+					isReady: this.isReady,
+					clientName: this.clientName,
+					blt: this.blt,
+
+				});
+			};
+		})(rect.toObject);
+
+		rect.clientName = name;
+		rect.isNew = true;
+		rect.playMode = true;
+		rect.isCrashed = false;
+		rect.blt = null;
+		rect._id = 'client_' + gamePlay.getNewUnitId();
+
+		rect.newAttribute = $.extend({}, gamePlay.getClientCtrl());
+
+		fabric.util.loadImage('./img/warTank1_small.png', function(img) {
+			rect.fill = new fabric.Pattern({
+				source: img,
+				repeat: 'no-repeat',
+				offsetX: 0,
+				offsetY: ofst
+			});
+
+			objCollection.push(rect);
+		});
+	};
+
+	//Create bot
+
+	function initBot() {
+		var name = rdData.names.slice(0).sort(function() {
+			return Math.random() > 0.5;
+		}).shift();
+		var pos = rdData.startPosition.slice(0).sort(function() {
+			return Math.random() > 0.5;
+		}).shift();
+		var angle = rdData.randomAngle.slice(0).sort(function() {
+			return Math.random() > 0.5;
+		}).shift();
+		var rect = new fabric.Rect({
+			left: pos,
+			top: 24,
+			width: 36,
+			height: 48,
+			angle: angle
+		});
+
+		//add additional attribute to object
+		rect.toObject = (function(toObject) {
+			return function() {
+				return fabric.util.object.extend(toObject.call(this), {
+					newAttribute: this.newAttribute,
+					_id: this._id,
+					isNew: this.isNew,
+					isCrashed: this.isCrashed,
+					isReady: this.isReady,
+					clientName: this.clientName,
+					blt: this.blt,
+				});
+			};
+		})(rect.toObject);
+
+		rect.clientName = name;
+		rect.blt = null;
+		rect.isNew = false;
+		rect.playMode = false;
+		rect.isCrashed = false;
+		rect._id = 'bot_' + gamePlay.getNewUnitId();
+
+		rect.newAttribute = $.extend({}, gamePlay.getBotCtrl());
+
+		fabric.util.loadImage('./img/warTank2_small.png', function(img) {
+			rect.fill = new fabric.Pattern({
+				source: img,
+				repeat: 'no-repeat',
+				offsetX: 0
+			});
+			objCollection.bots.push(rect);
+		});
+	};
+
+
+
 	function updateClient(data, bltData) {
 
 		var defaultParams = {
+			_id: null,
 			newAttribute: {
 				isMoving: null,
 				isShoot: null,
@@ -367,30 +297,40 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			}
 		};
 
-		for (var i = 0; i < data.length; i++) {
+		console.log(data);
 
-			gamePlay.everyUnit(function(unit) {
+		_(objCollection).map(function(unit, index) {
 
-				if (data[i]._id === unit.bot._id) {
+			_(data).map(function(remoteUnit, remoteindex) {
 
-					$.extend(true, unit.bot, data[i]);
+				if (unit._id === remoteUnit._id) {
 
+					
 					//check if this bot get in trouble
-					if (data[i].isNew) {
-						canvas.add(unit.bot);
+					if (remoteUnit.isNew) {
+						unit.isNew = false;
+						unit.isReady = true;
+
+						canvas.add(remoteUnit);
+
+						//set unit visible for engine
+						setTimeout(function() {
+							unit.playMode = true;
+						}, 500);
 					};
 
-					if (data[i].isCrashed) {
-						gamePlay.removeThisUnit(unit.bot);
+					if (remoteUnit.isCrashed) {
+						gamePlay.removeThisUnit(unit);
 					};
+					
+					$.extend(true, unit, remoteUnit);
 				};
 			});
-		};
+		});
 
-		var clientBot = objCollection.clients[$scope.index].bot;
+		var clientBot = objCollection[$scope.index];
 
 		var newUnitPos = gamePlay.extendReqiredKeys(defaultParams, clientBot);
-
 
 		//send info about client behavior
 		connection.send(JSON.stringify({
@@ -398,8 +338,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			data: newUnitPos
 		}));
 
-
-		//$.extend(oldClientPos, newUnitPos);
 
 		if (clientBot.newAttribute.isShoot) {
 			clientBot.newAttribute.isShoot = false;
@@ -416,36 +354,21 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 	function updateData(data, index) {
 
-		var client = objCollection.clients[index];
+		gamePlay.everyUnit(function(unit) {
 
-		if (!data.newAttribute.isShoot && client.blt !== null) {
-			data.newAttribute.isShoot = true;
-		};
-
-		$.extend(true, client.bot, data);
-
-
+			if (unit._id === data._id) {
+				if (!data.newAttribute.isShoot && unit.blt !== null) {
+					data.newAttribute.isShoot = true;
+				};
+				$.extend(true, unit, data);
+			};
+		});
 	};
 
-
 	//Initialize game
-	$scope.start = function() {
+	$scope.playGame = function() {
 
 		$scope.gameInterval = setInterval(function() {
-
-			//add object to hosts canvas
-			gamePlay.everyUnit(function(unit) {
-
-				if (unit.bot.isNew) {
-					canvas.add(unit.bot);
-					unit.bot.isNew = false;
-				}
-
-				if (unit.bot.playMode && unit.bot.isCrashed) {
-					unit.bot.playMode = false;
-				}
-
-			});
 
 			//Update units
 			gamePlay.update();
@@ -459,11 +382,15 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				}));
 			});
 
+			gamePlay.checkForNewUnits();
+
 			canvas.renderAll();
 			canvas2.renderAll();
 
 		}, 30);
 	};
+
+
 	/*
 $scope.start = function() {
 window.onEachFrame(function() {
@@ -523,6 +450,8 @@ connection.send(json);
 		};
 	});
 
+
+
 	$scope.nickName = prompt('Type youre nick name');
 	$scope.nickName = $scope.nickName ? $scope.nickName : 'Default name';
 
@@ -544,9 +473,9 @@ connection.send(json);
 			return;
 		}
 
-		if (json.type == 'index') {
 
-			$scope.indexChat = json.data;
+		if (json.type == 'setName') {
+
 			connection.send(JSON.stringify({
 				type: 'setName',
 				nickName: $scope.nickName
@@ -554,14 +483,15 @@ connection.send(json);
 
 			//Update index when some user out
 		} else if (json.type == 'setIndex') {
-			$scope.indexChat = json.data;
-			console.log($scope.nickName + 'your new index is ' + $scope.indexChat);
+			console.log($scope.nickName + 'your new index is ' + json.data);
 		} else if (json.type == 'hostArray') {
 			$scope.hostArray = json.data;
 			$scope.$apply();
-		} else if (json.type === 'youHost') {
-			$scope.youHost = true;
+
+		} else if (json.type === 'createHost') {
+			$scope.hostId = json.data.hostId;
 			$scope.$apply();
+
 		} else if (json.type == 'gameChatMsg') {
 
 			var timeNow = new Date();
@@ -583,9 +513,9 @@ connection.send(json);
 			$scope.hostArray = json.hosts;
 
 			$scope.$apply();
-		} else if (json.type == 'updateClient') {
+		} else if (json.type == 'sendHost') {
 
-			updateClient(json.data, json.blt, json.bots);
+			updateClient(json.data, json.blt);
 
 		} else if (json.type == 'initGame') {
 
@@ -593,9 +523,41 @@ connection.send(json);
 		} else if (json.type === 'clientSend') {
 
 			updateData(json.data, json.index);
-		};
+		} else if (json.type === 'getAvalibleClients') {
 
-		//canvas.renderAll();
+			console.log(json.data.count);
+			for (var i = json.data.count; i > 0; i--) {
+				initClient();
+			};
+
+			$scope.startGame();
+
+		};
 	};
 
+	(function(window) {
+		var onEachFrame;
+		if (window.webkitRequestAnimationFrame) {
+			onEachFrame = function(cb) {
+				var _cb = function() {
+					cb();
+					webkitRequestAnimationFrame(_cb);
+				}
+				_cb();
+			};
+		} else if (window.mozRequestAnimationFrame) {
+			onEachFrame = function(cb) {
+				var _cb = function() {
+					cb();
+					mozRequestAnimationFrame(_cb);
+				}
+				_cb();
+			};
+		} else {
+			onEachFrame = function(cb) {
+				setInterval(cb, 1000 / 60);
+			}
+		}
+		window.onEachFrame = onEachFrame;
+	})(window);
 });

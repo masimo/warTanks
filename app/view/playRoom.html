@@ -2,7 +2,7 @@
 	<div class="left_column">
 		<div class="game_list" ng-hide="gameMode">
 			<select class="select_host"  multiple="multiple" ng-model="hosts">
-				<option ng-repeat="host in hostArray" doublclick="joinToHost(hosts);" value="{{host.id}}" >{{host.name}}</option>
+				<option ng-repeat="host in hostArray" doublclick="joinToHost(hosts);" value="{{host.id}}" >{{host.hostName}} - {{host.name}}</option>
 				
 			</select>
 			<input type="button" class="btn btn-primary" ng-click="createHostDlg=true; modalDlg=true" value="Create new"></input>
@@ -17,7 +17,7 @@
 				<button type="button" class="btn" ng-click="sendGameChat(gameChatMsg);" ng-disabled="!gameChatMsg"><i class="icon-envelope"></i>Send</button>
 			</div>
 
-			<button type="botton" class="btn btn-large btn-warning" ng-model="startGameBtn" ng-click="startGameBtn=false; initGame();" ng-show="startGameBtn && youHost">Start!</button>
+			<button type="botton" class="btn btn-large btn-warning" ng-model="startGameBtn" ng-click="startGameBtn=false; initGame();" ng-show="startGameBtn">Start!</button>
 			{{youHost}}
 			
 		</div>
@@ -67,8 +67,5 @@
 		
 	</div>
 	<input type="button" value="Show" ng-click="checkList()">
-	<div class="alert alert-error" ng-show="messageMode">
-		<button type="button" class="close" ng-click="messageMode=false;">&times;</button>
-		{{errorMsg}}
-	</div>
+	
 </div>

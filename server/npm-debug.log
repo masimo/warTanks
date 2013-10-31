@@ -1,0 +1,27 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'G:\\max\\Projects\\test\\node\\nodejs\\\\node.exe',
+1 verbose cli   'G:\\max\\Projects\\test\\node\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'ln',
+1 verbose cli   'lodash' ]
+2 info using npm@1.2.32
+3 info using node@v0.10.12
+4 verbose node symlink G:\max\Projects\test\node\nodejs\\node.exe
+5 info G:\max\Projects\test\node\testTask02\node_modules\lodash unbuild
+6 verbose read json G:\max\Projects\test\node\testTask02\node_modules\lodash\package.json
+7 verbose link symlinking C:\Users\1\AppData\Roaming\npm\node_modules\lodash to G:\max\Projects\test\node\testTask02\node_modules\lodash
+8 error Error: EPERM, symlink 'C:\Users\1\AppData\Roaming\npm\node_modules\lodash'
+8 error  { [Error: EPERM, symlink 'C:\Users\1\AppData\Roaming\npm\node_modules\lodash']
+8 error   errno: 50,
+8 error   code: 'EPERM',
+8 error   path: 'C:\\Users\\1\\AppData\\Roaming\\npm\\node_modules\\lodash' }
+9 error Please try running this command again as root/Administrator.
+10 error System Windows_NT 6.1.7601
+11 error command "G:\\max\\Projects\\test\\node\\nodejs\\\\node.exe" "G:\\max\\Projects\\test\\node\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "ln" "lodash"
+12 error cwd G:\max\Projects\test\node\testTask02\server
+13 error node -v v0.10.12
+14 error npm -v 1.2.32
+15 error path C:\Users\1\AppData\Roaming\npm\node_modules\lodash
+16 error code EPERM
+17 error errno 50
+18 error stack Error: EPERM, symlink 'C:\Users\1\AppData\Roaming\npm\node_modules\lodash'
+19 verbose exit [ 50, true ]

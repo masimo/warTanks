@@ -1,7 +1,7 @@
-var DataActions = function(collection) {
+var DataActions = function() {
 	var self = this;
 
-	self.gameData = collection;
+	self.gameData = [];
 
 	self.hostArray = function() {
 
@@ -17,12 +17,23 @@ var DataActions = function(collection) {
 					hostIndex: value.hostIndex,
 					secureType: value.secureType,
 					name: value.name,
+					hostName: value.hostName,
 					type: value.type,
 				});
 			}
 		});
 
 		return array;
+	},
+	self.clientsCount = function(_id) {
+		var count = 0;
+
+		self.gameData.hostCollection.map(function(value) {
+			if (_id === value.id) {
+				count = value.clients.length;
+			};
+		});
+		return count;
 	},
 	self.getId = function(callBack) {
 
