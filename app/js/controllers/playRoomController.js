@@ -1,3 +1,5 @@
+var timeLine = {};
+
 app.controller('playRoomController', function NormalModeController($scope, $http, $filter) {
 
 	'use strict';
@@ -8,6 +10,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 	var objCollection = [];
 
 	var dateNow = new Date().getTime(); // remove this
+	var dateNow2 = new Date().getTime(); // remove this
 
 	//Arrays of random data
 	var rdData = {
@@ -149,9 +152,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		canvas = gamePlay.getCanvas();
 		canvas2 = gamePlay.getCanvas2();
 
-		//get data from host and asign it to this client
-		objCollection = data;
-
 		//set index 
 		$scope.index = index;
 		gamePlay.setClientIndex(index);
@@ -162,15 +162,16 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 
 		//Render all new bots
-		gamePlay.everyUnit(function(unit) {
+		_(data).forEach(function(unit) {
 			//We need to know if the object is loaded on host
 			if (typeof unit.fill !== 'object') {
 				return false
 				console.log('Unit not loaded "bad data"');
 			};
 
-
-			gamePlay.addThisUnit(unit);
+			objCollection.push(new fabric.Rect(unit));
+			
+			gamePlay.checkForNewUnits();
 
 		});
 
@@ -213,7 +214,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
 		rect.clientName = name;
 		rect.isNew = true;
-		rect.playMode = true;
+		rect.playMode = false;
+		rect.isReady = false;
 		rect.isCrashed = false;
 		rect.blt = null;
 		rect._id = 'client_' + gamePlay.getNewUnitId();
@@ -268,10 +270,11 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		})(rect.toObject);
 
 		rect.clientName = name;
-		rect.blt = null;
-		rect.isNew = false;
+		rect.isNew = true;
 		rect.playMode = false;
+		rect.isReady = false;
 		rect.isCrashed = false;
+		rect.blt = null;
 		rect._id = 'bot_' + gamePlay.getNewUnitId();
 
 		rect.newAttribute = $.extend({}, gamePlay.getBotCtrl());
@@ -282,7 +285,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				repeat: 'no-repeat',
 				offsetX: 0
 			});
-			objCollection.bots.push(rect);
+			objCollection.push(rect);
+			console.log(objCollection);
 		});
 	};
 
@@ -305,22 +309,32 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			if (remoteUnit.isNew) {
 
 				//check if this bot get in trouble
-				gamePlay.addThisUnit(remoteUnit, true)
+				objCollection.push(new fabric.Rect(remoteUnit));
+
+				gamePlay.checkForNewUnits();
 				
-				return;
+				return false;
 			};
 
 			_(objCollection).forEach(function(unit, index) {
 
-				if (dateNow + 2000 < new Date().getTime()) {
 
-					console.log(data, objCollection);
-					dateNow = new Date().getTime();
-				};
 
 				if (unit._id === remoteUnit._id) {
 
+					if (dateNow + 2000 < new Date().getTime()) {
+
+						console.log(data, objCollection);
+						dateNow = new Date().getTime();
+					};
+
 					$.extend(true, unit, remoteUnit);
+
+					if (dateNow2 + 2000 < new Date().getTime()) {
+
+						console.log(data, objCollection);
+						dateNow2 = new Date().getTime();
+					};
 
 					if (remoteUnit.isCrashed) {
 						gamePlay.removeThisUnit(unit);
@@ -383,11 +397,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				}));
 			});
 
-			gamePlay.checkForNewUnits();
-
+			
 			canvas.renderAll();
 			canvas2.renderAll();
-
 		}, 30);
 	};
 
@@ -561,4 +573,17 @@ connection.send(json);
 		}
 		window.onEachFrame = onEachFrame;
 	})(window);
+
+	function showConsoleLog() {
+		console.log('this should work');
+	};
+
+
+
+	timeLine = {
+		get addBot() {
+			initBot();
+		}
+	};
+
 });

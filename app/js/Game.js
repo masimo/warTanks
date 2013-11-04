@@ -5,7 +5,7 @@ var Game = function($scope) {
 	var self = this;
 
 	// Clients and bots
-	self.objCollection = {};
+	self.objCollection = [];
 	self.botStart = [20, 282, 575];
 
 	self.isMoving = false;
@@ -548,16 +548,15 @@ var Game = function($scope) {
 		}, 500);
 	};
 
-	self.addThisUnit = function(unit, addToObj) {
+	self.addThisUnit = function(newUnit) {
 
-		if (unit.isNew) {
-			unit.isNew = false;
-			unit = new fabric.Rect(unit);
-		}
+		newUnit.isNew = false;
+		newUnit.isReady = true;
 
-		if (addToObj) {
-			self.objCollection.push(remoteUnit)
-		};
+		var unit = new fabric.Rect(newUnit);
+		self.objCollection.push(unit);
+
+		console.log('new bot added ', unit)
 
 		//Add new tank to canvas and render it
 		self.canvas.add(unit);
@@ -567,24 +566,6 @@ var Game = function($scope) {
 			unit.playMode = true;
 		}, 500);
 
-	};
-
-	self.checkForNewUnits = function() {
-
-		self.everyUnit(function(unit) {
-
-			if (unit.isNew && typeof unit.fill === 'object') {
-				unit.isNew = false;
-				unit.isReady = true;
-
-				canvas.add(unit);
-
-				//set unit visible for engine
-				setTimeout(function() {
-					unit.playMode = true;
-				}, 500);
-			};
-		});
 	};
 
 	self.getAllChanges = function(callBack) {
@@ -603,13 +584,33 @@ var Game = function($scope) {
 				var defChang = $.extend({}, self.defChang);
 				//get all required keys and add it to Array
 				allChanges.push(self.extendReqiredKeys(defChang, unit));
-			} else if (unit.isNew && isReady) {
+			} else if (unit.isNew && typeof unit.fill === 'object') {
 
 				allChanges.push(unit)
 			}
 		});
 
+		self.checkForNewUnits();
+
 		callBack(allChanges);
+	};
+
+	self.checkForNewUnits = function() {
+
+		self.everyUnit(function(unit) {
+
+			if (unit.isNew && typeof unit.fill === 'object') {
+				unit.isNew = false;
+				unit.isReady = true;
+
+				self.canvas.add(unit);
+
+				//set unit visible for engine
+				setTimeout(function() {
+					unit.playMode = true;
+				}, 500);
+			};
+		});
 	};
 
 	self.extendReqiredKeys = function(destination, source) {
