@@ -112,8 +112,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			gamePlay.everyUnit(function(unit) {
 
 				if (unit.isNew) {
-					canvas.add(unit);
-					unit.isNew = false;
+
+					gamePlay.prepareThisUnit(unit);
 				}
 			});
 
@@ -156,10 +156,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 		$scope.index = index;
 		gamePlay.setClientIndex(index);
 
-		//Asign data to game constructor
+		//Assign data to game constructor
 		gamePlay.setCollection(objCollection);
-
-
 
 		//Render all new bots
 		_(data).forEach(function(unit) {
@@ -169,10 +167,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				console.log('Unit not loaded "bad data"');
 			};
 
-			objCollection.push(new fabric.Rect(unit));
-			
-			gamePlay.checkForNewUnits();
-
+			//we need to ad new unit
+			gamePlay.addThisUnit(unit);
 		});
 
 		canvas.renderAll();
@@ -303,38 +299,21 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 			}
 		};
 
-
 		_(data).map(function(remoteUnit, remoteindex) {
 
+			//check if this bot get in trouble
 			if (remoteUnit.isNew) {
 
-				//check if this bot get in trouble
-				objCollection.push(new fabric.Rect(remoteUnit));
+				gamePlay.addThisUnit(remoteUnit);
 
-				gamePlay.checkForNewUnits();
-				
 				return false;
 			};
 
 			_(objCollection).forEach(function(unit, index) {
 
-
-
 				if (unit._id === remoteUnit._id) {
 
-					if (dateNow + 2000 < new Date().getTime()) {
-
-						console.log(data, objCollection);
-						dateNow = new Date().getTime();
-					};
-
 					$.extend(true, unit, remoteUnit);
-
-					if (dateNow2 + 2000 < new Date().getTime()) {
-
-						console.log(data, objCollection);
-						dateNow2 = new Date().getTime();
-					};
 
 					if (remoteUnit.isCrashed) {
 						gamePlay.removeThisUnit(unit);
@@ -397,7 +376,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 				}));
 			});
 
-			
 			canvas.renderAll();
 			canvas2.renderAll();
 		}, 30);

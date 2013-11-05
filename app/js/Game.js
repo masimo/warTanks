@@ -1,663 +1,690 @@
 var Game = function($scope) {
 
-	"use strict"
+    "use strict"
 
-	var self = this;
+    var self = this;
 
-	// Clients and bots
-	self.objCollection = [];
-	self.botStart = [20, 282, 575];
+    // Clients and bots
+    self.objCollection = [];
+    self.botStart = [20, 282, 575];
 
-	self.isMoving = false;
+    self.isMoving = false;
 
-	self.botCount = 20;
+    self.botCount = 20;
 
-	//Index of player
-	var clientIndex = 0;
+    //Index of player
+    var clientIndex = 0;
 
-	//Random angles
-	self.rdAngArr = [0, 90, 180, 270];
+    //Random angles
+    self.rdAngArr = [0, 90, 180, 270];
 
-	//default changes
-	self.defChang = {
-		_id: null,
-		left: null,
-		top: null,
-		angle: null,
-		playMode: false,
-		isNew: true,
-		isCrashed: null
-	};
+    //default changes
+    self.defChang = {
+        _id: null,
+        left: null,
+        top: null,
+        angle: null,
+        playMode: false,
+        isNew: true,
+        isCrashed: null
+    };
 
-	// Cnvas 
-	self.canvas = new fabric.Canvas('playRoomField');
-	self.canvas2 = new fabric.Canvas('bulletsField');
+    // Cnvas 
+    self.canvas = new fabric.Canvas('playRoomField');
+    self.canvas2 = new fabric.Canvas('bulletsField');
 
-	var CANVAS_WIDTH = self.canvas.getWidth(),
-		CANVAS_HEIGHT = self.canvas.getHeight();
+    var CANVAS_WIDTH = self.canvas.getWidth(),
+        CANVAS_HEIGHT = self.canvas.getHeight();
 
-	// Controls parametrs
-	self.clientCtrl = {
-		type: 1,
-		speed: 2,
-		appearMode: true,
-		isMoving: false,
-		isShoot: false,
-		angle: 0,
-		score: 0
-	};
+    // Controls parametrs
+    self.clientCtrl = {
+        type: 1,
+        speed: 2,
+        appearMode: true,
+        isMoving: false,
+        isShoot: false,
+        angle: 0,
+        score: 0
+    };
 
-	self.botCtrl = {
-		type: 2,
-		speed: 1,
-		appearMode: true,
-		isMoving: true,
-		isShoot: false,
-		angle: 180,
-		score: 0
-	};
+    self.botCtrl = {
+        type: 2,
+        speed: 1,
+        appearMode: true,
+        isMoving: true,
+        isShoot: false,
+        angle: 180,
+        score: 0
+    };
 
-	self.bulletCtrl = {
-		type: 3,
-		speed: 5,
-		isMoving: true,
-		angle: 180
-	};
+    self.bulletCtrl = {
+        type: 3,
+        speed: 5,
+        isMoving: true,
+        angle: 180
+    };
 
-	//User interaction 
-	window.onkeyup = function(e) {
-		var key = e.keyCode;
+    //User interaction 
+    window.onkeyup = function(e) {
+        var key = e.keyCode;
 
-		var curentBot = self.objCollection[clientIndex].newAttribute;
+        var curentBot = self.objCollection[clientIndex].newAttribute;
 
-		if (key >= 37 && key <= 40) {
+        if (key >= 37 && key <= 40) {
 
-			// Switch move flag
-			curentBot.isMoving = false;
+            // Switch move flag
+            curentBot.isMoving = false;
 
-		}
+        }
 
-	};
+    };
 
 
-	window.onkeydown = function(e) {
-		var key = e.keyCode;
+    window.onkeydown = function(e) {
+        var key = e.keyCode;
 
-		var curentBot = self.objCollection[clientIndex].newAttribute;
+        var curentBot = self.objCollection[clientIndex].newAttribute;
 
-		//Check if it move is moving
-		if (curentBot.isMoving) return false;
+        //Check if it move is moving
+        if (curentBot.isMoving) return false;
 
-		//Check if arrow pressed
-		if (key === 37) {
+        //Check if arrow pressed
+        if (key === 37) {
 
-			curentBot.isMoving = true;
-			curentBot.angle = 270;
-		} else if (key === 38) {
+            curentBot.isMoving = true;
+            curentBot.angle = 270;
+        } else if (key === 38) {
 
-			curentBot.isMoving = true;
-			curentBot.angle = 0;
-		} else if (key === 39) {
+            curentBot.isMoving = true;
+            curentBot.angle = 0;
+        } else if (key === 39) {
 
-			curentBot.isMoving = true;
-			curentBot.angle = 90;
-		} else if (key === 40) {
+            curentBot.isMoving = true;
+            curentBot.angle = 90;
+        } else if (key === 40) {
 
-			curentBot.isMoving = true;
-			curentBot.angle = 180;
-		};
+            curentBot.isMoving = true;
+            curentBot.angle = 180;
+        };
 
-		if (key === 32 && !curentBot.isShoot) {
+        if (key === 32 && !curentBot.isShoot) {
 
-			curentBot.isShoot = true;
-		}
-	};
+            curentBot.isShoot = true;
+        }
+    };
 
 
-	/*
-	 *	Move client
-	 */
-	self.update = function() {
+    /*
+     *  Move client
+     */
+    self.update = function() {
 
 
-		self.everyUnit(function(curentBot, key) {
+        self.everyUnit(function(curentBot, key) {
 
-			//does not active unit
-			if (!curentBot.playMode && !curentBot.isCrashed) return false;
+            //does not active unit
+            if (!curentBot.playMode && !curentBot.isCrashed) return false;
 
-			if (curentBot.newAttribute.isShoot) {
+            if (curentBot.newAttribute.isShoot) {
 
-				if (curentBot.blt === null) {
-					self.shoot(curentBot);
-				};
+                if (curentBot.blt === null) {
+                    self.shoot(curentBot);
+                };
 
-				self.updateBullet(curentBot);
-			};
+                self.updateBullet(curentBot);
+            };
 
-			//If bot destroed, then skeep
-			if (curentBot.isCrashed) return false;
+            //If bot destroed, then skeep
+            if (curentBot.isCrashed) return false;
 
-			//If bot stoped, then skeep
-			if (!curentBot.newAttribute.isMoving) return false;
+            //If bot stoped, then skeep
+            if (!curentBot.newAttribute.isMoving) return false;
 
-			var angle = curentBot.angle = curentBot.newAttribute.angle,
-				left = curentBot.left,
-				top = curentBot.top,
-				topOld = top,
-				leftOld = left;
+            var angle = curentBot.angle = curentBot.newAttribute.angle,
+                left = curentBot.left,
+                top = curentBot.top,
+                topOld = top,
+                leftOld = left;
 
-			//Bots behave
-			if (curentBot.newAttribute.type === 2) {
+            //Bots behave
+            if (curentBot.newAttribute.type === 2) {
 
-				//if true change direction
-				if (0.01 > Math.random()) {
-					angle = curentBot.newAttribute.angle = self.rdAng();
-				}
+                //if true change direction
+                if (0.01 > Math.random()) {
+                    angle = curentBot.newAttribute.angle = self.rdAng();
+                }
 
-				//if true then shoot!
-				if (0.01 > Math.random()) {
-					curentBot.newAttribute.isShoot = true;
-				}
+                //if true then shoot!
+                if (0.01 > Math.random()) {
+                    curentBot.newAttribute.isShoot = true;
+                }
 
-			};
+            };
 
-			//Check the direction
-			if (angle === 0 || angle === 180) {
+            //Check the direction
+            if (angle === 0 || angle === 180) {
 
-				//Calculate top position of obj
-				top = angle < 180 ? top - curentBot.newAttribute.speed : top + curentBot.newAttribute.speed;
+                //Calculate top position of obj
+                top = angle < 180 ? top - curentBot.newAttribute.speed : top + curentBot.newAttribute.speed;
 
-				var collide = self.checkCollision(left, top, curentBot);
+                var collide = self.checkCollision(left, top, curentBot);
 
 
-				if (!collide && curentBot.newAttribute.appearMode) {
-					curentBot.newAttribute.appearMode = false;
-				};
+                if (!collide && curentBot.newAttribute.appearMode) {
+                    curentBot.newAttribute.appearMode = false;
+                };
 
-				//Check also if it just apper on map
-				if (collide.type === 2 && !curentBot.newAttribute.appearMode || collide.type == 1) {
+                //Check also if it just apper on map
+                if (collide.type === 2 && !curentBot.newAttribute.appearMode || collide.type == 1) {
 
-					top = topOld;
+                    top = topOld;
 
-					//If  this bot change the ange
-					if (curentBot.newAttribute.type === 2) {
-						curentBot.newAttribute.angle = self.rdAng(angle);
-					};
-				};
+                    //If  this bot change the ange
+                    if (curentBot.newAttribute.type === 2) {
+                        curentBot.newAttribute.angle = self.rdAng(angle);
+                    };
+                };
 
-			} else {
+            } else {
 
-				//Calculate left position of obj
-				left = angle < 180 ? left + curentBot.newAttribute.speed : left - curentBot.newAttribute.speed;
+                //Calculate left position of obj
+                left = angle < 180 ? left + curentBot.newAttribute.speed : left - curentBot.newAttribute.speed;
 
-				var collide = self.checkCollision(left, top, curentBot);
+                var collide = self.checkCollision(left, top, curentBot);
 
-				if (!collide && curentBot.newAttribute.appearMode) {
-					curentBot.newAttribute.appearMode = false;
-				};
+                if (!collide && curentBot.newAttribute.appearMode) {
+                    curentBot.newAttribute.appearMode = false;
+                };
 
-				//Check also if it just apper on map
-				if (collide.type === 2 && !curentBot.newAttribute.appearMode || collide.type == 1) {
+                //Check also if it just apper on map
+                if (collide.type === 2 && !curentBot.newAttribute.appearMode || collide.type == 1) {
 
-					left = leftOld;
+                    left = leftOld;
 
-					//If  this bot change the ange
-					if (curentBot.newAttribute.type === 2) {
-						curentBot.newAttribute.angle = self.rdAng(angle);
-					};
-				};
+                    //If  this bot change the ange
+                    if (curentBot.newAttribute.type === 2) {
+                        curentBot.newAttribute.angle = self.rdAng(angle);
+                    };
+                };
 
-			};
+            };
 
-			curentBot.set({
-				left: left,
-				top: top,
-				angle: curentBot.newAttribute.angle
-			});
-		});
+            curentBot.set({
+                left: left,
+                top: top,
+                angle: curentBot.newAttribute.angle
+            });
+        });
 
-	};
+    };
 
-	self.updateBullet = function(curentBot) {
+    self.updateBullet = function(curentBot) {
 
-		var angle = curentBot.blt.angle,
-			left = curentBot.blt.left,
-			top = curentBot.blt.top;
+        var angle = curentBot.blt.angle,
+            left = curentBot.blt.left,
+            top = curentBot.blt.top;
 
 
-		//Check the direction
-		if (angle === 0 || angle === 180) {
+        //Check the direction
+        if (angle === 0 || angle === 180) {
 
-			//Calculate top position of obj
-			top = angle < 180 ? top - curentBot.blt.additionAttr.speed : top + curentBot.blt.additionAttr.speed;
+            //Calculate top position of obj
+            top = angle < 180 ? top - curentBot.blt.additionAttr.speed : top + curentBot.blt.additionAttr.speed;
 
-			if (self.checkTarget(left, top, curentBot)) {
+            if (self.checkTarget(left, top, curentBot)) {
 
-				curentBot.newAttribute.score++;
-			};
+                curentBot.newAttribute.score++;
+            };
 
-		} else {
+        } else {
 
-			//Calculate left position of obj
-			left = angle < 180 ? left + curentBot.blt.additionAttr.speed : left - curentBot.blt.additionAttr.speed;
+            //Calculate left position of obj
+            left = angle < 180 ? left + curentBot.blt.additionAttr.speed : left - curentBot.blt.additionAttr.speed;
 
-			if (self.checkTarget(left, top, curentBot)) {
+            if (self.checkTarget(left, top, curentBot)) {
 
-				curentBot.newAttribute.score++;
-			};
+                curentBot.newAttribute.score++;
+            };
 
-		};
+        };
 
-		//if bullet was deleted 
-		if (curentBot.blt !== null) {
+        //if bullet was deleted 
+        if (curentBot.blt !== null) {
 
-			curentBot.blt.set({
-				left: left,
-				top: top
-			});
+            curentBot.blt.set({
+                left: left,
+                top: top
+            });
 
-		};
+        };
 
 
 
-	};
+    };
 
-	//Check for collision
-	self.checkCollision = function(_x2, _y2, curentBot) {
+    //Check for collision
+    self.checkCollision = function(_x2, _y2, curentBot) {
 
-		var collision = false;
+        var collision = false;
 
 
-		var _size2 = curentBot.getHeight() / 2;
+        var _size2 = curentBot.getHeight() / 2;
 
-		if (_y2 + _size2 >= CANVAS_HEIGHT || 0 > _y2 - _size2 ||
-			_x2 + _size2 >= CANVAS_WIDTH || 0 > _x2 - _size2) {
+        if (_y2 + _size2 >= CANVAS_HEIGHT || 0 > _y2 - _size2 ||
+            _x2 + _size2 >= CANVAS_WIDTH || 0 > _x2 - _size2) {
 
-			return {
-				type: 1
-			};
-		}
+            return {
+                type: 1
+            };
+        }
 
-		self.everyUnit(function(value, index) {
+        self.everyUnit(function(value, index) {
 
-			if (curentBot === value || value.playMode) {
-				return false
-			};
+            if (curentBot === value || !value.playMode) {
+                return false
+            };
 
-			//Get dimentions of obj
-			var x1 = value.left,
-				y1 = value.top,
-				size1 = value.height / 2;
+            //Get dimentions of obj
+            var x1 = value.left,
+                y1 = value.top,
+                size1 = value.height / 2;
 
-			//Distanse
-			var dist = size1 + _size2 - 4;
+            //Distanse
+            var dist = size1 + _size2 - 4;
 
-			var xDist = x1 - _x2;
-			var yDist = y1 - _y2;
+            var xDist = x1 - _x2;
+            var yDist = y1 - _y2;
 
-			var hyp = Math.sqrt((xDist * xDist) + (yDist * yDist));
+            var hyp = Math.sqrt((xDist * xDist) + (yDist * yDist));
 
-			if (hyp < dist) {
+            if (hyp < dist) {
 
-				collision = {
-					type: 2
-				};
-			};
-		});
+                collision = {
+                    type: 2
+                };
+            };
+        });
 
-		return collision;
-	};
+        return collision;
+    };
 
-	self.shoot = function(curentBot) {
+    self.shoot = function(curentBot) {
 
 
-		var left = curentBot.left,
-			top = curentBot.top,
-			angle = curentBot.newAttribute.angle;
+        var left = curentBot.left,
+            top = curentBot.top,
+            angle = curentBot.newAttribute.angle;
 
 
-		var blt = new fabric.Rect({
-			left: left,
-			top: top,
-			width: 6,
-			height: 6,
-			angle: angle,
-			fill: 'red',
-			selectable: false
-		});
+        var blt = new fabric.Rect({
+            left: left,
+            top: top,
+            width: 6,
+            height: 6,
+            angle: angle,
+            fill: 'red',
+            selectable: false
+        });
 
 
-		//add additional attribute to object
-		blt.toObject = (function(toObject) {
-			return function() {
-				return fabric.util.object.extend(toObject.call(this), {
-					additionAttr: this.additionAttr
-				});
-			};
-		})(blt.toObject);
+        //add additional attribute to object
+        blt.toObject = (function(toObject) {
+            return function() {
+                return fabric.util.object.extend(toObject.call(this), {
+                    additionAttr: this.additionAttr
+                });
+            };
+        })(blt.toObject);
 
-		blt.additionAttr = $.extend({}, self.bulletCtrl);
+        blt.additionAttr = $.extend({}, self.bulletCtrl);
 
-		self.canvas2.add(blt);
+        self.canvas2.add(blt);
 
-		curentBot.blt = blt;
+        curentBot.blt = blt;
 
-	};
+    };
 
 
-	self.checkTarget = function(_x2, _y2, curentBot) {
+    self.checkTarget = function(_x2, _y2, curentBot) {
 
 
-		var _size2 = curentBot.blt.height / 2;
+        var _size2 = curentBot.blt.height / 2;
 
-		if (0 > _y2 - _size2 || _y2 + _size2 >= CANVAS_HEIGHT ||
-			0 > _x2 - _size2 || _x2 + _size2 >= CANVAS_WIDTH) {
+        if (0 > _y2 - _size2 || _y2 + _size2 >= CANVAS_HEIGHT ||
+            0 > _x2 - _size2 || _x2 + _size2 >= CANVAS_WIDTH) {
 
-			/*
-			 * Out of area
-			 */
-			self.canvas2.remove(curentBot.blt);
-			curentBot.blt = null;
-			curentBot.newAttribute.isShoot = false;
+            /*
+             * Out of area
+             */
+            self.canvas2.remove(curentBot.blt);
+            curentBot.blt = null;
+            curentBot.newAttribute.isShoot = false;
 
-			return false
+            return false
 
-		}
+        }
 
-		self.everyUnit(function(unit, index) {
+        self.everyUnit(function(unit, index) {
 
-			if (unit.newAttribute.type === curentBot.newAttribute.type || unit.isCrashed) {
-				return false;
-			};
+            if (unit.newAttribute.type === curentBot.newAttribute.type || unit.isCrashed) {
+                return false;
+            };
 
-			//Get dimentions of obj
-			var x1 = unit.left,
-				y1 = unit.top,
-				size1 = unit.height / 2;
+            //Get dimentions of obj
+            var x1 = unit.left,
+                y1 = unit.top,
+                size1 = unit.height / 2;
 
-			//Distanse
-			var dist = size1 + _size2 - 4;
+            //Distanse
+            var dist = size1 + _size2 - 4;
 
-			var xDist = x1 - _x2;
-			var yDist = y1 - _y2;
+            var xDist = x1 - _x2;
+            var yDist = y1 - _y2;
 
-			var hyp = Math.sqrt((xDist * xDist) + (yDist * yDist));
+            var hyp = Math.sqrt((xDist * xDist) + (yDist * yDist));
 
-			if (hyp < dist) {
+            if (hyp < dist) {
 
-				self.explode(unit);
+                self.explode(unit);
 
-				if (curentBot.bot.newAttribute.type == 1) {
-					$scope.score = curentBot.bot.newAttribute.score += 1;
-				}
+                if (curentBot.newAttribute.type == 1) {
+                    $scope.score = curentBot.newAttribute.score += 1;
+                }
 
-				self.canvas2.remove(curentBot.blt.bullet);
-				curentBot.blt = null;
-				curentBot.bot.newAttribute.isShoot = false;
+                self.canvas2.remove(curentBot.blt);
+                curentBot.blt = null;
+                curentBot.newAttribute.isShoot = false;
 
-				return true;
+                return true;
 
-			};
+            };
 
-		});
+        });
 
-		return false;
+        return false;
 
-	};
+    };
 
-	self.explode = function(unit) {
+    self.explode = function(unit) {
 
-		//change bg of tank
-		unit.fill.offsetX = -36;
+        //change bg of tank
+        unit.fill.offsetX = -36;
 
-		//switch flag to check if this bot crashed
-		unit.isCrashed = true;
+        //switch flag to check if this bot crashed
+        unit.isCrashed = true;
 
-		//Delete object from canvas with some delay
-		var timer = setTimeout(function() {
+        //Delete object from canvas with some delay
+        var timer = setTimeout(function() {
 
-			self.canvas.remove(unit);
+            self.canvas.remove(unit);
 
-		}, 500);
+        }, 500);
 
-	};
+    };
 
-	self.getCanvas = function() {
-		return this.canvas;
-	};
-	self.getCanvas2 = function() {
-		return this.canvas2;
-	};
+    self.getCanvas = function() {
+        return this.canvas;
+    };
+    self.getCanvas2 = function() {
+        return this.canvas2;
+    };
 
-	self.getBotCtrl = function() {
-		return self.botCtrl;
-	};
+    self.getBotCtrl = function() {
+        return self.botCtrl;
+    };
 
-	self.getClientCtrl = function() {
-		return self.clientCtrl;
-	};
+    self.getClientCtrl = function() {
+        return self.clientCtrl;
+    };
 
-	self.setCollection = function(obj) {
-		this.objCollection = obj;
-	};
+    self.setCollection = function(obj) {
+        this.objCollection = obj;
+    };
 
-	self.extend = function(destination, source) {
+    self.extend = function(destination, source) {
 
-		for (var property in source) {
-			if (source[property] && source[property].constructor &&
-				source[property].constructor === Object) {
-				destination[property] = destination[property] || {};
-				arguments.callee(destination[property], source[property]);
-			} else {
-				destination[property] = source[property];
-			}
-		}
-		return destination;
+        for (var property in source) {
+            if (source[property] && source[property].constructor &&
+                source[property].constructor === Object) {
+                destination[property] = destination[property] || {};
+                arguments.callee(destination[property], source[property]);
+            } else {
+                destination[property] = source[property];
+            }
+        }
+        return destination;
 
-	};
+    };
 
-	self.getId = function(callBack) {
+    self.getId = function(callBack) {
 
-		var _id = Math.random().toString(36).substring(2);
+        var _id = Math.random().toString(36).substring(2);
 
-		for (var prop in self.objCollection) {
-			for (var i = 0, len = self.objCollection[prop].length; i < len; i++) {
+        for (var prop in self.objCollection) {
+            for (var i = 0, len = self.objCollection[prop].length; i < len; i++) {
 
-				if (_id == self.objCollection[prop][i]._id) {
-					arguments.callee();
-				};
+                if (_id == self.objCollection[prop][i]._id) {
+                    arguments.callee();
+                };
 
-			};
-		};
+            };
+        };
 
-		return _id;
+        return _id;
 
-	};
+    };
 
-	self.getNewUnitId = function() {
+    self.getNewUnitId = function() {
 
-		var obj = self.canvas.getObjects();
+        var obj = self.canvas.getObjects();
 
-		var _id = Math.random().toString(36).substring(2);
+        var _id = Math.random().toString(36).substring(2);
 
-		for (var i = obj.length - 1; i >= 0; i--) {
+        for (var i = obj.length - 1; i >= 0; i--) {
 
-			//We need unic id to compare with new id
-			var unicId = obj[i]._id.split('_').pop();
+            //We need unic id to compare with new id
+            var unicId = obj[i]._id.split('_').pop();
 
-			if (_id === unicId) {
-				arguments.callee();
-			};
+            if (_id === unicId) {
+                arguments.callee();
+            };
 
 
-		};
+        };
 
-		return _id;
+        return _id;
 
-	};
+    };
 
 
 
-	self.everyUnit = function(callBack) {
+    self.everyUnit = function(callBack) {
 
-		_(self.objCollection).forEach(function(value, index) {
-			callBack(value, index);
-		});
+        _(self.objCollection).forEach(function(value, index) {
+            callBack(value, index);
+        });
 
-	}
+    }
 
-	self.removeThisUnit = function(removeThis) {
+    self.removeThisUnit = function(removeThis) {
 
-		removeThis.fill.offsetX = -36;
+        removeThis.fill.offsetX = -36;
 
-		setTimeout(function() {
-			self.canvas.remove(removeThis);
-		}, 500);
-	};
+        setTimeout(function() {
+            self.canvas.remove(removeThis);
+        }, 500);
+    };
 
-	self.updateThisUnit = function(destination, updateThis) {
-		$.each(self.canvas.getObjects(), function(key, value) {
-			if (updateThis._id === value._id) {
+    self.updateThisUnit = function(destination, updateThis) {
+        $.each(self.canvas.getObjects(), function(key, value) {
+            if (updateThis._id === value._id) {
 
-				var temporObj = self.extendReqiredKeys(destination, updateThis);
-				$.extend(true, value, temporObj);
-			};
-		});
-	};
+                var temporObj = self.extendReqiredKeys(destination, updateThis);
+                $.extend(true, value, temporObj);
+            };
+        });
+    };
 
-	self.gameLoader = function(callBack) {
-		var isLoad = true;
+    self.gameLoader = function(callBack) {
+        var isLoad = true;
 
-		setTimeout(function() {
+        setTimeout(function() {
 
-			self.everyUnit(function(unit) {
+            self.everyUnit(function(unit) {
 
-				if (typeof unit.fill !== 'object') {
-					console.log('Das not loaded');
+                if (typeof unit.fill !== 'object') {
+                    console.log('Das not loaded');
 
-					//switch thumbler
-					isLoad = false;
-				};
-			});
+                    //switch thumbler
+                    isLoad = false;
+                };
+            });
 
-			if (isLoad) {
+            if (isLoad) {
 
-				//Go game!
-				callBack(self.objCollection);
-			};
-		}, 500);
-	};
+                //Go game!
+                callBack(self.objCollection);
+            };
+        }, 500);
+    };
 
-	self.addThisUnit = function(newUnit) {
+    self.addThisUnit = function(newUnit) {
 
-		newUnit.isNew = false;
-		newUnit.isReady = true;
+        newUnit.isNew = false;
+        newUnit.isReady = true;
 
-		var unit = new fabric.Rect(newUnit);
-		self.objCollection.push(unit);
+        var unit = new fabric.Rect(newUnit);
 
-		console.log('new bot added ', unit)
+        self.objCollection.push(unit);
 
-		//Add new tank to canvas and render it
-		self.canvas.add(unit);
+        console.log('new bot added ', unit)
 
-		//set unit visible for engine
-		setTimeout(function() {
-			unit.playMode = true;
-		}, 500);
+        //Add new tank to canvas and render it
+        self.canvas.add(unit);
 
-	};
+        //set unit visible for engine
+        setTimeout(function() {
+            unit.playMode = true;
+        }, 500);
 
-	self.getAllChanges = function(callBack) {
+    };
 
-		var allChanges = [];
+    self.prepareThisUnit = function(unit) {
 
-		//through every unit
-		self.everyUnit(function(unit) {
+        unit.isNew = false;
+        unit.isReady = true;
 
-			if (unit.playMode && unit.isCrashed) {
-				unit.playMode = false;
-			}
+        console.log('new bot added ', unit);
 
-			if (unit.playMode) {
+        //Add new tank to canvas and render it
+        self.canvas.add(unit);
 
-				var defChang = $.extend({}, self.defChang);
-				//get all required keys and add it to Array
-				allChanges.push(self.extendReqiredKeys(defChang, unit));
-			} else if (unit.isNew && typeof unit.fill === 'object') {
+        //set unit visible for engine
+        setTimeout(function() {
+            unit.playMode = true;
+        }, 500);
 
-				allChanges.push(unit)
-			}
-		});
+    };
 
-		self.checkForNewUnits();
 
-		callBack(allChanges);
-	};
+    self.getAllChanges = function(callBack) {
 
-	self.checkForNewUnits = function() {
+        var allChanges = [],
+            newUnit = {};
 
-		self.everyUnit(function(unit) {
+        //through every unit
+        self.everyUnit(function(unit) {
 
-			if (unit.isNew && typeof unit.fill === 'object') {
-				unit.isNew = false;
-				unit.isReady = true;
 
-				self.canvas.add(unit);
+            if (unit.playMode) {
 
-				//set unit visible for engine
-				setTimeout(function() {
-					unit.playMode = true;
-				}, 500);
-			};
-		});
-	};
+                var defChang = $.extend({}, self.defChang);
 
-	self.extendReqiredKeys = function(destination, source) {
+                //get all required keys and add it to Array
+                allChanges.push(self.extendReqiredKeys(defChang, unit));
+            } else if (unit.isNew && typeof unit.fill === 'object') {
 
-		for (var property in source) {
-			if (source[property] && source[property].constructor &&
-				source[property].constructor === Object && property in destination) {
-				destination[property] = destination[property] || {};
-				self.extendReqiredKeys(destination[property], source[property]);
+                /* We need to make a copy of object
+                 * and send it to every client
+                 */
+                newUnit = $.extend({}, unit);
 
-			} else if (property in destination) {
-				destination[property] = source[property];
-			}
-		}
-		return destination;
+                allChanges.push(newUnit);
+                self.prepareThisUnit(unit)
+            }
 
-	};
-	self.setClientIndex = function(index) {
-		clientIndex = index;
-	}
+            if (unit.playMode && unit.isCrashed) {
+                unit.playMode = false;
+            }
 
-	self.getBltCtrl = function() {
-		return self.extend({}, self.bulletCtrl);
-	};
+        });
 
-	self.rdAng = function(not) {
+        callBack(allChanges);
+    };
 
-		var self = this;
+    self.checkForNewUnits = function() {
 
-		// Get array of posible angles
-		var arr = self.rdAngArr.slice(0);
+        self.everyUnit(function(unit) {
 
-		// Cut undesirable angle
-		if (not != undefined) {
+            if (unit.isNew && typeof unit.fill === 'object') {
+                unit.isNew = false;
+                unit.isReady = true;
 
-			for (var i in arr) {
-				if (arr[i] === not) {
-					arr.splice(i, 1);
-				}
-			}
-		};
+                self.canvas.add(unit);
 
-		//Return random angle
-		return arr.sort(function() {
-			return Math.random() > 0.5
-		})[0];
-	};
+                //set unit visible for engine
+                setTimeout(function() {
+                    unit.playMode = true;
+                }, 500);
+            };
+        });
+    };
+
+    self.extendReqiredKeys = function(destination, source) {
+
+        for (var property in source) {
+            if (source[property] && source[property].constructor &&
+                source[property].constructor === Object && property in destination) {
+                destination[property] = destination[property] || {};
+                self.extendReqiredKeys(destination[property], source[property]);
+
+            } else if (property in destination) {
+                destination[property] = source[property];
+            }
+        }
+        return destination;
+
+    };
+    self.setClientIndex = function(index) {
+        clientIndex = index;
+    }
+
+    self.getBltCtrl = function() {
+        return self.extend({}, self.bulletCtrl);
+    };
+
+    self.rdAng = function(not) {
+
+        var self = this;
+
+        // Get array of posible angles
+        var arr = self.rdAngArr.slice(0);
+
+        // Cut undesirable angle
+        if (not != undefined) {
+
+            for (var i in arr) {
+                if (arr[i] === not) {
+                    arr.splice(i, 1);
+                }
+            }
+        };
+
+        //Return random angle
+        return arr.sort(function() {
+            return Math.random() > 0.5
+        })[0];
+    };
 
 
 }

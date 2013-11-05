@@ -5,7 +5,7 @@ var http = require('http');
 var express = require('express');
 var fs = require('fs');
 
-var SOCKET_PORT = 1337;
+var SOCKET_PORT = process.env.PORT || 1337;
 
 var DataActions = require('./dataActions').DataActions;
 
@@ -34,7 +34,7 @@ exports.start = function(PORT, STATIC_DIR) {
 
 	app.use(express.static(STATIC_DIR));
 
-	app.listen(process.env.PORT || 3000);
+	app.listen(PORT);
 
 }
 
