@@ -4,6 +4,9 @@ var Game = function($scope) {
 
     var self = this;
 
+    //Index of player
+    var clientIndex = 0;
+
     // Clients and bots
     self.objCollection = [];
     self.botStart = [20, 282, 575];
@@ -11,9 +14,6 @@ var Game = function($scope) {
     self.isMoving = false;
 
     self.botCount = 20;
-
-    //Index of player
-    var clientIndex = 0;
 
     //Random angles
     self.rdAngArr = [0, 90, 180, 270];
@@ -59,7 +59,7 @@ var Game = function($scope) {
 
     self.bulletCtrl = {
         type: 3,
-        speed: 5,
+        speed: 10,
         isMoving: true,
         angle: 180
     };
@@ -74,12 +74,10 @@ var Game = function($scope) {
 
             // Switch move flag
             curentBot.isMoving = false;
-
         }
-
     };
 
-
+    //User interaction 
     window.onkeydown = function(e) {
         var key = e.keyCode;
 
@@ -113,12 +111,10 @@ var Game = function($scope) {
         }
     };
 
-
     /*
      *  Move client
      */
     self.update = function() {
-
 
         self.everyUnit(function(curentBot, key) {
 
@@ -137,7 +133,7 @@ var Game = function($scope) {
             //If bot destroed, then skeep
             if (curentBot.isCrashed) return false;
 
-            //If bot stoped, then skeep
+            //If bot stoped, then skeep it
             if (!curentBot.newAttribute.isMoving) return false;
 
             var angle = curentBot.angle = curentBot.newAttribute.angle,
@@ -158,7 +154,6 @@ var Game = function($scope) {
                 if (0.01 > Math.random()) {
                     curentBot.newAttribute.isShoot = true;
                 }
-
             };
 
             //Check the direction
@@ -175,7 +170,8 @@ var Game = function($scope) {
                 };
 
                 //Check also if it just apper on map
-                if (collide.type === 2 && !curentBot.newAttribute.appearMode || collide.type == 1) {
+                if (collide.type === 2 && !curentBot.newAttribute.appearMode ||
+                    collide.type === 1) {
 
                     top = topOld;
 
@@ -197,7 +193,8 @@ var Game = function($scope) {
                 };
 
                 //Check also if it just apper on map
-                if (collide.type === 2 && !curentBot.newAttribute.appearMode || collide.type == 1) {
+                if (collide.type === 2 && !curentBot.newAttribute.appearMode ||
+                    collide.type === 1) {
 
                     left = leftOld;
 
@@ -209,6 +206,7 @@ var Game = function($scope) {
 
             };
 
+            //Update unit position
             curentBot.set({
                 left: left,
                 top: top,
@@ -405,6 +403,7 @@ var Game = function($scope) {
 
     };
 
+    //this will explode unit
     self.explode = function(unit) {
 
         //change bg of tank
@@ -441,21 +440,6 @@ var Game = function($scope) {
         this.objCollection = obj;
     };
 
-    self.extend = function(destination, source) {
-
-        for (var property in source) {
-            if (source[property] && source[property].constructor &&
-                source[property].constructor === Object) {
-                destination[property] = destination[property] || {};
-                arguments.callee(destination[property], source[property]);
-            } else {
-                destination[property] = source[property];
-            }
-        }
-        return destination;
-
-    };
-
     self.getId = function(callBack) {
 
         var _id = Math.random().toString(36).substring(2);
@@ -471,7 +455,6 @@ var Game = function($scope) {
         };
 
         return _id;
-
     };
 
     self.getNewUnitId = function() {
@@ -493,17 +476,13 @@ var Game = function($scope) {
         };
 
         return _id;
-
     };
-
-
 
     self.everyUnit = function(callBack) {
 
         _(self.objCollection).forEach(function(value, index) {
             callBack(value, index);
         });
-
     }
 
     self.removeThisUnit = function(removeThis) {
@@ -557,8 +536,6 @@ var Game = function($scope) {
 
         self.objCollection.push(unit);
 
-        console.log('new bot added ', unit)
-
         //Add new tank to canvas and render it
         self.canvas.add(unit);
 
@@ -573,8 +550,6 @@ var Game = function($scope) {
 
         unit.isNew = false;
         unit.isReady = true;
-
-        console.log('new bot added ', unit);
 
         //Add new tank to canvas and render it
         self.canvas.add(unit);
@@ -653,14 +628,14 @@ var Game = function($scope) {
             }
         }
         return destination;
-
     };
+
     self.setClientIndex = function(index) {
         clientIndex = index;
     }
 
     self.getBltCtrl = function() {
-        return self.extend({}, self.bulletCtrl);
+        return $.extend({}, self.bulletCtrl);
     };
 
     self.rdAng = function(not) {
