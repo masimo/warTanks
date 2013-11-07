@@ -5,6 +5,7 @@ var http = require('http');
 var express = require('express');
 var fs = require('fs');
 
+
 var SOCKET_PORT = process.env.PORT || 1337;
 
 var DataActions = require('./dataActions').DataActions;
@@ -57,20 +58,23 @@ wsServer.on('request', function(request) {
 
 	var connection = request.accept(null, request.origin);
 
+	/*Key and value can be different
+	 *	Key - json.type
+	 *	Value - [hendler]
+	 */
 	var listObjects = {
 		'setName': 'setName',
 		'createHost': 'createHost',
 		'joinToHost': 'joinToHost',
-
 		'gameChatMsg': 'gameChatMsg',
-		'clientConnected': 'clientConnected',
-		'warning': 'warning',
 		'sendHost': 'sendHost',
-		'initGame': 'initGame',
 		'clientSend': 'clientSend',
-		'getAvalibleClients': 'getAvalibleClients'
+		'initGame': 'initGame',
+		'getAvalibleClients': 'getAvalibleClients',
+		'score': 'playerScore'
 	};
-	var onMessage = {
+
+	var onSocketMessage = {
 
 		setName: function(data) {
 			var hostList = [];
@@ -152,7 +156,120 @@ wsServer.on('request', function(request) {
 				}))
 			};
 		},
+		gameChatMsg: function(data) {
+			gameData.hostCollection[index.host].clients.forEach(function(value) {
+				value.sendUTF(JSON.stringify({
+					type: 'gameChatMsg',
+					data: {
+						message: data.message
+					}
+				}))
+			});
+		},
+		sendHost: function(data) {
+
+			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
+
+				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
+					type: 'sendHost',
+					data: {
+						updates: data.updates,
+						blt: data.blt
+					}
+				}));
+			};
+		},
+		clientSend: function(data) {
+			if (!gameData.hostCollection[index.host]) {
+				index.host = null;
+				index.client = null;
+				return false;
+			};
+			gameData.hostCollection[index.host].clients[0].sendUTF(JSON.stringify({
+				type: 'clientSend',
+				data: {
+					updates: data.updates,
+					index: index.client
+				}
+			}));
+		},
+		initGame: function(data) {
+
+			gameData.hostCollection[index.host].disabled = true;
+
+			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
+
+				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
+					type: 'initGame',
+					data: {
+						updates: data.initData,
+						index: i
+					}
+				}));
+			};
+
+			var host = JSON.stringify({
+				type: 'hostArray',
+				data: {
+					hosts: gameActions.hostArray()
+				}
+			});
+
+			gameData.clients.forEach(function(value) {
+				value.sendUTF(host);
+			});
+		},
+		getAvalibleClients: function(data) {
+			var clintCountJson = {
+				type: 'getAvalibleClients',
+				data: {
+					count: gameActions.clientsCount(data.hostId)
+				}
+			}
+
+			connection.sendUTF(JSON.stringify(clintCountJson))
+		},
+		playerScore: function(data) {
+
+			gameData.hostCollection[index.host].clients.forEach(function(value, key) {
+				value.sendUTF(JSON.stringify({
+					type: 'score',
+					data: {
+						botsCount: data.botsCount
+					}
+				}));
+			});
+		}
+
 	};
+
+	var onCloseConnect = {
+		hostLeftGame: function() {
+
+			gameData.hostCollection[index.host].clients.forEach(function(value, key) {
+				value.sendUTF(JSON.stringify({
+					type: 'hostLeftGame',
+					data: {
+						name: userName
+					}
+				}));
+			});
+
+			gameData.hostCollection[index.host] = null;
+
+			var BreakException = {};
+
+			try {
+				gameData.hostCollection.forEach(function(value, index) {
+
+					if (value !== null) throw BreakException;
+					gameData.hostCollection.splice(index, 1);
+				});
+			} catch (e) {
+				if (e !== BreakException) throw e;
+			}
+		}
+	}
 
 	var userName = '';
 
@@ -170,7 +287,10 @@ wsServer.on('request', function(request) {
 	}));
 
 
-	// user sent some message
+
+	/* 
+	 *	User sent some message
+	 */
 	connection.on('message', function(message) {
 
 		if (message.type !== 'utf8') return false;
@@ -181,119 +301,38 @@ wsServer.on('request', function(request) {
 			console.log('Bad json')
 		}
 
-		if (json.type == 'setName') {
-
-		} else if (json.type == 'createHost') {
-
-		} else if (json.type == 'joinToHost') {
-
-
-
-		} else if (json.type == 'gameChatMsg') {
-
-			gameData.hostCollection[index.host].clients.forEach(function(value) {
-				value.sendUTF(JSON.stringify({
-					type: 'gameChatMsg',
-					data: {
-						message: json.data
-					}
-				}))
-			});
-
-		} else if (json.type == 'sendHost') {
-
-			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
-
-				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
-					type: 'sendHost',
-					data: {
-						updates: json.data,
-						blt: json.blt
-					}
-				}));
-			};
-
-		} else if (json.type == 'clientSend') {
-
-			gameData.hostCollection[index.host].clients[0].sendUTF(JSON.stringify({
-				type: 'clientSend',
-				data: {
-					updates: json.data,
-					index: index.client
-				}
-			}));
-
-		} else if (json.type == 'initGame') {
-
-			gameData.hostCollection[index.host].disabled = true;
-
-			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
-
-				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
-					type: 'initGame',
-					data: {
-						updates: json.data,
-						index: i
-					}
-				}));
-			};
-
-			var host = JSON.stringify({
-				type: 'hostArray',
-				data: {
-					hosts: gameActions.hostArray()
-				}
-			});
-
-			gameData.clients.forEach(function(value) {
-				value.sendUTF(host);
-			});
-		} else if (json.type == 'getAvalibleClients') {
-			var clintCountJson = {
-				type: 'getAvalibleClients',
-				data: {
-					count: gameActions.clientsCount(json.data.hostId)
-				}
-			}
-
-			connection.sendUTF(JSON.stringify(clintCountJson))
-		};
-
-
 		/* All massages that we receive need to check 
 		 *  if we can ran it
 		 */
 		if (json.type in listObjects) {
-			onMassage[listObjects[json.type]](json.data || null);
+			onSocketMessage[listObjects[json.type]](json.data || null);
 		};
 	});
 
-	// user disconnected
+	// User disconnected
 	connection.on('close', function(connection) {
-		//if (userName !== false && userColor !== false) {
-
-		var timeNow = new Date();
-		console.log((timeNow.getHours()) + ':' + (timeNow.getMinutes()) + ':' +
-			(timeNow.getSeconds()) + ' ' + userName + " disconnected!");
 
 		// remove user from the list of connected clients
-
 		gameData.clients.splice(index.chat, 1);
 
-		if (index.client !== null) {
+		if (index.client !== null && !gameData.hostCollection[index.host]) {
 			gameData.hostCollection[index.host].clients.splice(index.client, 1);
 
-			index.client = null;
-			//We need to disabled this host if all clients left
-			var len = gameData.hostCollection[index.host].clients.length;
-			console.log(len);
-			if (len === 0) {
-				console.log(gameData.hostCollection[index.host].name + 'disabled');
-				gameData.hostCollection[index.host].disabled = true;
+			if (index.client === 0) {
+				onCloseConnect.hostLeftGame();
 			}
 		};
 
+		var host = JSON.stringify({
+			type: 'hostArray',
+			data: {
+				hosts: gameActions.hostArray()
+			}
+		});
 
+		gameData.clients.forEach(function(value) {
+			value.sendUTF(host);
+		});
 
 		//Update client Index
 		gameData.clients.forEach(function(value, key) {
@@ -304,34 +343,8 @@ wsServer.on('request', function(request) {
 				}
 			}));
 		});
+
+		console.log(new Date() + userName + " disconnected!");
 	});
 
 });
-
-
-
-var webSocket = {
-
-	generateClient: function() {
-
-	},
-	extend: function(destination, source, clene) {
-
-		for (var property in source) {
-			if (source[property] && source[property].constructor &&
-				source[property].constructor === Object) {
-				destination[property] = destination[property] || {};
-				arguments.callee(destination[property], source[property]);
-			} else {
-				destination[property] = source[property];
-			}
-		}
-		if (clene) {
-			return this.extend({}, destination);
-		} else {
-			return destination;
-		};
-
-
-	}
-};

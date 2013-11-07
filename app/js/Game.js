@@ -26,7 +26,10 @@ var Game = function($scope) {
         angle: null,
         playMode: false,
         isNew: true,
-        isCrashed: null
+        isCrashed: null,
+        newAttribute: {
+            score: 0
+        }
     };
 
     // Cnvas 
@@ -59,7 +62,7 @@ var Game = function($scope) {
 
     self.bulletCtrl = {
         type: 3,
-        speed: 10,
+        speed: 4,
         isMoving: true,
         angle: 180
     };
@@ -386,7 +389,7 @@ var Game = function($scope) {
                 self.explode(unit);
 
                 if (curentBot.newAttribute.type == 1) {
-                    $scope.score = curentBot.newAttribute.score += 1;
+                    curentBot.newAttribute.score += 1;
                 }
 
                 self.canvas2.remove(curentBot.blt);
@@ -411,6 +414,11 @@ var Game = function($scope) {
 
         //switch flag to check if this bot crashed
         unit.isCrashed = true;
+
+        //add unit with getter
+        if ($scope.botCounter) {
+            timeLine.addBot;
+        };
 
         //Delete object from canvas with some delay
         var timer = setTimeout(function() {
@@ -573,7 +581,7 @@ var Game = function($scope) {
 
             if (unit.playMode) {
 
-                var defChang = $.extend({}, self.defChang);
+                var defChang = $.extend(true, {}, self.defChang);
 
                 //get all required keys and add it to Array
                 allChanges.push(self.extendReqiredKeys(defChang, unit));

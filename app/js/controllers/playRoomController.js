@@ -23,7 +23,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
     $scope.hostId = '';
     $scope.score = 0;
     $scope.botCounter = 20;
-    $scope.allAmount = 20;
     $scope.index = 0;
     $scope.gameInterval = null;
 
@@ -81,13 +80,15 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                     password = prompt('This host protected');
                 };
 
-                $.extend(true, value, {
+                connection.send(JSON.stringify({
                     type: 'joinToHost',
-                    myNickName: $scope.nickName,
-                    secure: password !== null ? password : null,
-                });
+                    data: {
+                        id: value.id,
+                        myNickName: $scope.nickName,
+                        secure: password !== null ? password : null,
+                    }
 
-                connection.send(JSON.stringify(value));
+                }));
             };
 
         });
@@ -101,7 +102,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
             connection.send(JSON.stringify({
                 type: 'initGame',
-                data: initData
+                data: {
+                    'initData': initData
+                }
             }));
 
             console.log(initData);
@@ -278,6 +281,16 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             });
             objCollection.push(rect);
         });
+
+        $scope.botCounter--;
+
+        connection.send(JSON.stringify({
+            type: 'score',
+            data: {
+                botsCount: $scope.botCounter
+            }
+        }));
+
     };
 
     function updateClient(data, bltData) {
@@ -314,14 +327,19 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             });
         });
 
+
         var clientBot = objCollection[$scope.index];
+
+        $scope.score = clientBot.newAttribute.score;
 
         var newUnitPos = gamePlay.extendReqiredKeys(defaultParams, clientBot);
 
         //send info about client behavior
         connection.send(JSON.stringify({
             type: 'clientSend',
-            data: newUnitPos
+            data: {
+                updates: newUnitPos
+            }
         }));
 
 
@@ -358,7 +376,15 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         };
     };
 
+    function exitGame() {
+        canvas.clear();
+        $scope.gameMode = false;
+        $scope.gameChat = false;
+        $scope.chatHistory = '';
+        $scope.$apply();
 
+        objCollection = [];
+    }
 
     $scope.sendGameChat = function(text) {
 
@@ -366,12 +392,14 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
         connection.send(JSON.stringify({
             type: 'gameChatMsg',
-            data: message
+            data: {
+                'message': message
+            }
         }));
     }
 
     $scope.showErrorMsg = function(data) {
-        $scope.errorMsg = data;
+        $scope.errorMsg = data.message;
         $scope.messageMode = true;
 
         setTimeout(function() {
@@ -425,7 +453,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             'sendHost': 'sendHost',
             'initGame': 'initGame',
             'clientSend': 'clientSend',
-            'getAvalibleClients': 'getAvalibleClients'
+            'getAvalibleClients': 'getAvalibleClients',
+            'hostLeftGame': 'hostLeftGame',
+            'score': 'playerScore'
         };
 
         /* All massages that we receive need to check 
@@ -442,7 +472,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
             connection.send(JSON.stringify({
                 type: 'setName',
-                nickName: $scope.nickName
+                data: {
+                    nickName: $scope.nickName
+                }
+
             }));
         },
         setIndex: function(data) {
@@ -489,7 +522,20 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             for (var i = data.count; i > 0; i--) {
                 initClient();
             };
+            for (var i = 3; i > 0; i--) {
+                initBot();
+            };
             $scope.startGame();
+        },
+        hostLeftGame: function(data) {
+
+            alert('Host left Game ' + data.name);
+
+            exitGame();
+        },
+        playerScore: function(data) {
+            $scope.botCounter = data.botsCount;
+            $scope.$apply();
         }
     };
 
@@ -523,23 +569,27 @@ app.controller('playRoomController', function NormalModeController($scope, $http
     //Initialize game
     $scope.playGame = function() {
 
-        $scope.gameInterval = setInterval(function() {
+        window.onEachFrame(function() {
 
             //Update units
             gamePlay.update();
+
+            $scope.score = objCollection[$scope.index].newAttribute.score;
 
             gamePlay.getAllChanges(function(changedUnit) {
 
                 connection.send(JSON.stringify({
                     type: 'sendHost',
-                    data: changedUnit,
-                    blt: canvas2,
+                    data: {
+                        updates: changedUnit,
+                        blt: canvas2,
+                    }
                 }));
             });
 
             canvas.renderAll();
             canvas2.renderAll();
-        }, 2000 / 60);
+        });
     };
 
     timeLine = {
