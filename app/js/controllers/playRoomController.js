@@ -431,7 +431,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
     };
 
     // open connection
-    var connection = new WebSocket('ws://127.0.0.1:1337');
+    var host = location.origin.replace(/^http/, 'ws');
+    console.log(host);
+    var connection = new WebSocket(host);
 
     connection.onmessage = function(message) {
         try {

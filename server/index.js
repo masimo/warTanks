@@ -1,17 +1,15 @@
 // websocket and http servers
-var webSocketServer = require('websocket').server;
-var http = require('http');
+var WebSocketServer = require('ws').Server,
+	http = require('http'),
+	express = require('express'),
+	app = express(),
+	port = process.env.PORT || 5000;
 
-var express = require('express');
 
 
-var SOCKET_PORT = process.env.PORT || 1337;
+var STATIC_DIR = __dirname + '/../app';
 
 var DataActions = require('./dataActions').DataActions;
-
-var HOSTS = '/getHost',
-	JOIN_TO_THIS_HOST = '/joinToHost',
-	CREATE_NEW_HOST = '/createNewHost';
 
 var gameData = {
 	hostCollection: [],
@@ -22,40 +20,25 @@ var gameActions = new DataActions();
 
 gameActions.gameData = gameData;
 
-
-exports.start = function(PORT, STATIC_DIR) {
-
-	var app = express();
-
-
-	app.use(express.bodyParser());
-
-	app.use(express.compress());
-
-	app.use(express.static(STATIC_DIR));
-
-	app.listen(PORT);
-
-}
-
+app.use(express.static(STATIC_DIR));
 
 /*
  * Start Web-socket actions
  */
-var server = http.createServer(function(request, response) {});
+var server = http.createServer(app);
+server.listen(port);
 
-server.listen(SOCKET_PORT, function() {
-	console.log((new Date()) + " Server is listening on port " + SOCKET_PORT);
+console.log('http server listening on %d', port);
+
+var wsServer = new WebSocketServer({
+	server: server
 });
 
-var wsServer = new webSocketServer({
-	httpServer: server
-});
+wsServer.on('connection', function(ws) {
+	
+	//console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
 
-wsServer.on('request', function(request) {
-	console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
-
-	var connection = request.accept(null, request.origin);
+	//var ws = request.accept(null, request.origin);
 
 	/*Key and value can be different
 	 *	Key - json.type
@@ -81,7 +64,7 @@ wsServer.on('request', function(request) {
 			userName = data.nickName;
 
 			//send available host
-			connection.sendUTF(JSON.stringify({
+			ws.send(JSON.stringify({
 				type: 'hostArray',
 				data: {
 					hosts: gameActions.hostArray()
@@ -93,7 +76,7 @@ wsServer.on('request', function(request) {
 
 			//Create host
 			index.host = gameData.hostCollection.push(data.newHost) - 1;
-			index.client = gameData.hostCollection[index.host].clients.push(connection) - 1;
+			index.client = gameData.hostCollection[index.host].clients.push(ws) - 1;
 
 			//set unique identifier
 			gameActions.getId(function(_id) {
@@ -102,7 +85,7 @@ wsServer.on('request', function(request) {
 
 			//gameData.hostCollection[index.host].hostIndex = index.host;
 
-			connection.sendUTF(JSON.stringify({
+			ws.send(JSON.stringify({
 				type: 'createHost',
 				data: {
 					hostId: gameData.hostCollection[index.host].id,
@@ -118,7 +101,7 @@ wsServer.on('request', function(request) {
 			});
 
 			gameData.clients.forEach(function(value) {
-				value.sendUTF(host);
+				value.send(host);
 			});
 		},
 		joinToHost: function(data) {
@@ -130,13 +113,13 @@ wsServer.on('request', function(request) {
 				if (data.id === value.id &&
 					data.secure === value.secure && !value.disabled) {
 
-					index.client = value.clients.push(connection) - 1;
+					index.client = value.clients.push(ws) - 1;
 
 					userName = data.myNickName;
 
 					index.host = gameData.hostCollection.indexOf(value);
 
-					connection.sendUTF(JSON.stringify({
+					ws.send(JSON.stringify({
 						type: 'clientConnected'
 					}));
 
@@ -146,7 +129,7 @@ wsServer.on('request', function(request) {
 
 			//if somthing go wrong
 			if (!loined) {
-				connection.sendUTF(JSON.stringify({
+				ws.send(JSON.stringify({
 					type: 'warning',
 					data: {
 						message: 'Password incorrect or host not response',
@@ -157,7 +140,7 @@ wsServer.on('request', function(request) {
 		},
 		gameChatMsg: function(data) {
 			gameData.hostCollection[index.host].clients.forEach(function(value) {
-				value.sendUTF(JSON.stringify({
+				value.send(JSON.stringify({
 					type: 'gameChatMsg',
 					data: {
 						message: data.message
@@ -169,7 +152,7 @@ wsServer.on('request', function(request) {
 
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
-				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
+				gameData.hostCollection[index.host].clients[i].send(JSON.stringify({
 					type: 'sendHost',
 					data: {
 						updates: data.updates,
@@ -184,7 +167,7 @@ wsServer.on('request', function(request) {
 				index.client = null;
 				return false;
 			};
-			gameData.hostCollection[index.host].clients[0].sendUTF(JSON.stringify({
+			gameData.hostCollection[index.host].clients[0].send(JSON.stringify({
 				type: 'clientSend',
 				data: {
 					updates: data.updates,
@@ -198,7 +181,7 @@ wsServer.on('request', function(request) {
 
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
-				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
+				gameData.hostCollection[index.host].clients[i].send(JSON.stringify({
 					type: 'initGame',
 					data: {
 						updates: data.initData,
@@ -215,7 +198,7 @@ wsServer.on('request', function(request) {
 			});
 
 			gameData.clients.forEach(function(value) {
-				value.sendUTF(host);
+				value.send(host);
 			});
 		},
 		getAvalibleClients: function(data) {
@@ -226,12 +209,12 @@ wsServer.on('request', function(request) {
 				}
 			}
 
-			connection.sendUTF(JSON.stringify(clintCountJson))
+			ws.send(JSON.stringify(clintCountJson))
 		},
 		playerScore: function(data) {
 
 			gameData.hostCollection[index.host].clients.forEach(function(value, key) {
-				value.sendUTF(JSON.stringify({
+				value.send(JSON.stringify({
 					type: 'score',
 					data: {
 						botsCount: data.botsCount
@@ -246,7 +229,7 @@ wsServer.on('request', function(request) {
 		hostLeftGame: function() {
 
 			gameData.hostCollection[index.host].clients.forEach(function(value, key) {
-				value.sendUTF(JSON.stringify({
+				value.send(JSON.stringify({
 					type: 'hostLeftGame',
 					data: {
 						name: userName
@@ -279,9 +262,9 @@ wsServer.on('request', function(request) {
 	};
 
 	// we need to know client index to remove them on 'close' event
-	index.chat = gameData.clients.push(connection) - 1;
+	index.chat = gameData.clients.push(ws) - 1;
 
-	connection.sendUTF(JSON.stringify({
+	ws.send(JSON.stringify({
 		type: 'setName'
 	}));
 
@@ -290,12 +273,10 @@ wsServer.on('request', function(request) {
 	/* 
 	 *	User sent some message
 	 */
-	connection.on('message', function(message) {
-
-		if (message.type !== 'utf8') return false;
+	ws.on('message', function(message) {
 
 		try {
-			json = JSON.parse(message.utf8Data);
+			json = JSON.parse(message);
 		} catch (err) {
 			console.log('Bad json')
 		}
@@ -309,7 +290,7 @@ wsServer.on('request', function(request) {
 	});
 
 	// User disconnected
-	connection.on('close', function(connection) {
+	ws.on('close', function(ws) {
 
 		// remove user from the list of connected clients
 		gameData.clients.splice(index.chat, 1);
@@ -330,12 +311,12 @@ wsServer.on('request', function(request) {
 		});
 
 		gameData.clients.forEach(function(value) {
-			value.sendUTF(host);
+			value.send(host);
 		});
 
 		//Update client Index
 		gameData.clients.forEach(function(value, key) {
-			value.sendUTF(JSON.stringify({
+			value.send(JSON.stringify({
 				type: 'setIndex',
 				data: {
 					index: key
