@@ -1,5 +1,5 @@
 // websocket and http servers
-var webSocketServer = require('ws').server;
+var webSocketServer = require('ws').Server;
 var http = require('http');
 
 var express = require('express');
@@ -49,7 +49,7 @@ server.listen(SOCKET_PORT, function() {
 });
 
 var wsServer = new webSocketServer({
-	httpServer: server
+	server: server
 });
 
 wsServer.on('request', function(request) {
