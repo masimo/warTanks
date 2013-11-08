@@ -1,11 +1,11 @@
 // websocket and http servers
-var webSocketServer = require('ws').Server;
+var webSocketServer = require('websocket').server;
 var http = require('http');
 
 var express = require('express');
 
 
-var SOCKET_PORT = process.env.PORT || 5000;
+var SOCKET_PORT = process.env.PORT || 1337;
 
 var DataActions = require('./dataActions').DataActions;
 
@@ -49,7 +49,7 @@ server.listen(SOCKET_PORT, function() {
 });
 
 var wsServer = new webSocketServer({
-	server: server
+	httpServer: server
 });
 
 wsServer.on('request', function(request) {
