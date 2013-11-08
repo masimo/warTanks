@@ -543,10 +543,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             $scope.$apply();
         },
         checkPing: function(data) {
-            $scope.yourPing = (new Date().getTime() - data.pingStart) / 1000;
+            $scope.yourPing = (new Date().getTime() - data.pingStart);
 
-            if ($scope.yourPing < 0.1) {
-                $scope.color = '0F0';
+            if ($scope.yourPing < 30) {
+                $scope.color = '0A0';
             } else if ($scope.yourPing >= 0.1 && $scope.yourPing < 0.2) {
                 $scope.color = 'FF8500';
             } else if ($scope.yourPing >= 0.2) {
