@@ -5,7 +5,7 @@ var http = require('http');
 var express = require('express');
 
 
-var SOCKET_PORT = process.env.PORT || 1337;
+var SOCKET_PORT = process.env.PORT || 5000;
 
 var DataActions = require('./dataActions').DataActions;
 
