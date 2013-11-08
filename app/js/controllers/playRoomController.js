@@ -16,7 +16,9 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         names: ['Boris', 'Den', 'Lyolik', 'Bolik'],
         leftPosition: [200, 400]
     }
+    var ping = {};
 
+    $scope.color = 'f00';
     $scope.chatHistory = '';
     $scope.gameChatMsg = '';
     $scope.startGameBtn = false;
@@ -457,7 +459,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             'clientSend': 'clientSend',
             'getAvalibleClients': 'getAvalibleClients',
             'hostLeftGame': 'hostLeftGame',
-            'score': 'playerScore'
+            'score': 'playerScore',
+            'checkPing': 'checkPing'
         };
 
         /* All massages that we receive need to check 
@@ -538,6 +541,18 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         playerScore: function(data) {
             $scope.botCounter = data.botsCount;
             $scope.$apply();
+        },
+        checkPing: function(data) {
+            $scope.yourPing = (new Date().getTime() - data.pingStart) / 1000;
+
+            if ($scope.yourPing < 0.1) {
+                $scope.color = '0F0';
+            } else if ($scope.yourPing >= 0.1 && $scope.yourPing < 0.2) {
+                $scope.color = 'FF8500';
+            } else if ($scope.yourPing >= 0.2) {
+                $scope.color = 'F00';
+            };
+            $scope.$apply();
         }
     };
 
@@ -565,13 +580,27 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             }
         }
         window.onEachFrame = onEachFrame;
+
     })(window);
+
+
+    function checkYourPing() {
+
+        ping.start = new Date().getTime();
+
+        connection.send(JSON.stringify({
+            type: 'checkPing',
+            data: {
+                pingStart: ping.start
+            }
+        }));
+    }
 
 
     //Initialize game
     $scope.playGame = function() {
 
-        window.onEachFrame(function() {
+        $scope.gameInterval = setInterval(function() {
 
             //Update units
             gamePlay.update();
@@ -591,8 +620,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
             canvas.renderAll();
             canvas2.renderAll();
-        });
+        }, 2000 / 60);
     };
+
+    ping.interval = setInterval(checkYourPing, 1000 * 2);
 
     timeLine = {
         get addBot() {

@@ -35,7 +35,7 @@ var wsServer = new WebSocketServer({
 });
 
 wsServer.on('request', function(request) {
-	
+
 	//console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
 
 	var ws = request.accept(null, request.origin);
@@ -53,7 +53,8 @@ wsServer.on('request', function(request) {
 		'clientSend': 'clientSend',
 		'initGame': 'initGame',
 		'getAvalibleClients': 'getAvalibleClients',
-		'score': 'playerScore'
+		'score': 'playerScore',
+		'checkPing': 'checkPing'
 	};
 
 	var onSocketMessage = {
@@ -64,7 +65,7 @@ wsServer.on('request', function(request) {
 			userName = data.nickName;
 
 			//send available host
-			ws.send(JSON.stringify({
+			ws.sendUTF(JSON.stringify({
 				type: 'hostArray',
 				data: {
 					hosts: gameActions.hostArray()
@@ -85,7 +86,7 @@ wsServer.on('request', function(request) {
 
 			//gameData.hostCollection[index.host].hostIndex = index.host;
 
-			ws.send(JSON.stringify({
+			ws.sendUTF(JSON.stringify({
 				type: 'createHost',
 				data: {
 					hostId: gameData.hostCollection[index.host].id,
@@ -101,7 +102,7 @@ wsServer.on('request', function(request) {
 			});
 
 			gameData.clients.forEach(function(value) {
-				value.send(host);
+				value.sendUTF(host);
 			});
 		},
 		joinToHost: function(data) {
@@ -119,7 +120,7 @@ wsServer.on('request', function(request) {
 
 					index.host = gameData.hostCollection.indexOf(value);
 
-					ws.send(JSON.stringify({
+					ws.sendUTF(JSON.stringify({
 						type: 'clientConnected'
 					}));
 
@@ -129,7 +130,7 @@ wsServer.on('request', function(request) {
 
 			//if somthing go wrong
 			if (!loined) {
-				ws.send(JSON.stringify({
+				ws.sendUTF(JSON.stringify({
 					type: 'warning',
 					data: {
 						message: 'Password incorrect or host not response',
@@ -140,7 +141,7 @@ wsServer.on('request', function(request) {
 		},
 		gameChatMsg: function(data) {
 			gameData.hostCollection[index.host].clients.forEach(function(value) {
-				value.send(JSON.stringify({
+				value.sendUTF(JSON.stringify({
 					type: 'gameChatMsg',
 					data: {
 						message: data.message
@@ -152,7 +153,7 @@ wsServer.on('request', function(request) {
 
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
-				gameData.hostCollection[index.host].clients[i].send(JSON.stringify({
+				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'sendHost',
 					data: {
 						updates: data.updates,
@@ -167,7 +168,7 @@ wsServer.on('request', function(request) {
 				index.client = null;
 				return false;
 			};
-			gameData.hostCollection[index.host].clients[0].send(JSON.stringify({
+			gameData.hostCollection[index.host].clients[0].sendUTF(JSON.stringify({
 				type: 'clientSend',
 				data: {
 					updates: data.updates,
@@ -181,7 +182,7 @@ wsServer.on('request', function(request) {
 
 			for (var i = 1; i < gameData.hostCollection[index.host].clients.length; i++) {
 
-				gameData.hostCollection[index.host].clients[i].send(JSON.stringify({
+				gameData.hostCollection[index.host].clients[i].sendUTF(JSON.stringify({
 					type: 'initGame',
 					data: {
 						updates: data.initData,
@@ -198,7 +199,7 @@ wsServer.on('request', function(request) {
 			});
 
 			gameData.clients.forEach(function(value) {
-				value.send(host);
+				value.sendUTF(host);
 			});
 		},
 		getAvalibleClients: function(data) {
@@ -209,18 +210,26 @@ wsServer.on('request', function(request) {
 				}
 			}
 
-			ws.send(JSON.stringify(clintCountJson))
+			ws.sendUTF(JSON.stringify(clintCountJson))
 		},
 		playerScore: function(data) {
 
 			gameData.hostCollection[index.host].clients.forEach(function(value, key) {
-				value.send(JSON.stringify({
+				value.sendUTF(JSON.stringify({
 					type: 'score',
 					data: {
 						botsCount: data.botsCount
 					}
 				}));
 			});
+		},
+		checkPing: function(data) {
+			ws.sendUTF(JSON.stringify({
+				type: 'checkPing',
+				data: {
+					pingStart: data.pingStart
+				}
+			}))
 		}
 
 	};
@@ -229,7 +238,7 @@ wsServer.on('request', function(request) {
 		hostLeftGame: function() {
 
 			gameData.hostCollection[index.host].clients.forEach(function(value, key) {
-				value.send(JSON.stringify({
+				value.sendUTF(JSON.stringify({
 					type: 'hostLeftGame',
 					data: {
 						name: userName
@@ -264,7 +273,7 @@ wsServer.on('request', function(request) {
 	// we need to know client index to remove them on 'close' event
 	index.chat = gameData.clients.push(ws) - 1;
 
-	ws.send(JSON.stringify({
+	ws.sendUTF(JSON.stringify({
 		type: 'setName'
 	}));
 
@@ -315,12 +324,12 @@ wsServer.on('request', function(request) {
 		});
 
 		gameData.clients.forEach(function(value) {
-			value.send(host);
+			value.sendUTF(host);
 		});
 
 		//Update client Index
 		gameData.clients.forEach(function(value, key) {
-			value.send(JSON.stringify({
+			value.sendUTF(JSON.stringify({
 				type: 'setIndex',
 				data: {
 					index: key
