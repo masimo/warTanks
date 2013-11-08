@@ -8,8 +8,7 @@ var DataActions = function() {
 		var array = [];
 
 		self.gameData.hostCollection.map(function(value) {
-			console.log(value.disabled);
-
+			
 			if (value.disabled === false) {
 
 				array.push({

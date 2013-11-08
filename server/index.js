@@ -1,5 +1,5 @@
 // websocket and http servers
-var WebSocketServer = require('ws').Server,
+var WebSocketServer = require('websocket').server,
 	http = require('http'),
 	express = require('express'),
 	app = express(),
@@ -31,14 +31,14 @@ server.listen(port);
 console.log('http server listening on %d', port);
 
 var wsServer = new WebSocketServer({
-	server: server
+	httpServer: server
 });
 
-wsServer.on('connection', function(ws) {
+wsServer.on('request', function(request) {
 	
 	//console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
 
-	//var ws = request.accept(null, request.origin);
+	var ws = request.accept(null, request.origin);
 
 	/*Key and value can be different
 	 *	Key - json.type
@@ -275,8 +275,10 @@ wsServer.on('connection', function(ws) {
 	 */
 	ws.on('message', function(message) {
 
+
+
 		try {
-			json = JSON.parse(message);
+			json = JSON.parse(message.utf8Data);
 		} catch (err) {
 			console.log('Bad json')
 		}
@@ -292,6 +294,8 @@ wsServer.on('connection', function(ws) {
 	// User disconnected
 	ws.on('close', function(ws) {
 
+		console.log('Disconected');
+
 		// remove user from the list of connected clients
 		gameData.clients.splice(index.chat, 1);
 
@@ -299,7 +303,7 @@ wsServer.on('connection', function(ws) {
 			gameData.hostCollection[index.host].clients.splice(index.client, 1);
 
 			if (index.client === 0) {
-				onCloseConnect.hostLeftGame();
+				//onCloseConnect.hostLeftGame();
 			}
 		};
 
