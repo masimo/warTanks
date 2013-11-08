@@ -1,24 +1,14 @@
 {
-  "name": "testTask02",
-  "version": "0.0.0",
-  "main": "./server/start.js",
+  "name": "node-example",
+  "version": "0.0.1",
   "dependencies": {
-    "express": "~3.4.0",
-    "websocket": "~1.0.8",
-    "fs":"",
+    "express": "3.4.x",
+    "websocket": "1.0.x",
+    "fs":"0.1.x",
     "http":""
   },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/masimo/warTanks.git"
-  },
-  "author": "",
-  "license": "BSD",
-  "bugs": {
-    "url": "https://github.com/masimo/warTanks/issues"
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.2.x"
   }
 }
