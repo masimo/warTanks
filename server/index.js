@@ -3,8 +3,6 @@ var webSocketServer = require('websocket').server;
 var http = require('http');
 
 var express = require('express');
-var fs = require('fs');
-
 
 var SOCKET_PORT = process.env.PORT || 1337;
 
