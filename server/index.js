@@ -1,8 +1,9 @@
 // websocket and http servers
-var webSocketServer = require('websocket').server;
+var webSocketServer = require('ws').server;
 var http = require('http');
 
 var express = require('express');
+
 
 var SOCKET_PORT = process.env.PORT || 1337;
 
