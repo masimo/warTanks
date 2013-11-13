@@ -1,6 +1,6 @@
 var Game = function($scope) {
 
-    "use strict"
+    "use strict";
 
     var self = this;
 
@@ -106,7 +106,7 @@ var Game = function($scope) {
 
             curentBot.isMoving = true;
             curentBot.angle = 180;
-        };
+        }
 
         if (key === 32 && !curentBot.isShoot) {
 
@@ -128,10 +128,10 @@ var Game = function($scope) {
 
                 if (curentBot.blt === null) {
                     self.shoot(curentBot);
-                };
+                }
 
                 self.updateBullet(curentBot);
-            };
+            }
 
             //If bot destroed, then skeep
             if (curentBot.isCrashed) return false;
@@ -143,7 +143,8 @@ var Game = function($scope) {
                 left = curentBot.left,
                 top = curentBot.top,
                 topOld = top,
-                leftOld = left;
+                leftOld = left,
+                collide;
 
             //Bots behave
             if (curentBot.newAttribute.type === 2) {
@@ -157,7 +158,7 @@ var Game = function($scope) {
                 if (0.01 > Math.random()) {
                     curentBot.newAttribute.isShoot = true;
                 }
-            };
+            }
 
             //Check the direction
             if (angle === 0 || angle === 180) {
@@ -165,12 +166,12 @@ var Game = function($scope) {
                 //Calculate top position of obj
                 top = angle < 180 ? top - curentBot.newAttribute.speed : top + curentBot.newAttribute.speed;
 
-                var collide = self.checkCollision(left, top, curentBot);
+                collide = self.checkCollision(left, top, curentBot);
 
 
                 if (!collide && curentBot.newAttribute.appearMode) {
                     curentBot.newAttribute.appearMode = false;
-                };
+                }
 
                 //Check also if it just apper on map
                 if (collide.type === 2 && !curentBot.newAttribute.appearMode ||
@@ -181,19 +182,19 @@ var Game = function($scope) {
                     //If  this bot change the ange
                     if (curentBot.newAttribute.type === 2) {
                         curentBot.newAttribute.angle = self.rdAng(angle);
-                    };
-                };
+                    }
+                }
 
             } else {
 
                 //Calculate left position of obj
                 left = angle < 180 ? left + curentBot.newAttribute.speed : left - curentBot.newAttribute.speed;
 
-                var collide = self.checkCollision(left, top, curentBot);
+                collide = self.checkCollision(left, top, curentBot);
 
                 if (!collide && curentBot.newAttribute.appearMode) {
                     curentBot.newAttribute.appearMode = false;
-                };
+                }
 
                 //Check also if it just apper on map
                 if (collide.type === 2 && !curentBot.newAttribute.appearMode ||
@@ -204,10 +205,10 @@ var Game = function($scope) {
                     //If  this bot change the ange
                     if (curentBot.newAttribute.type === 2) {
                         curentBot.newAttribute.angle = self.rdAng(angle);
-                    };
-                };
+                    }
+                }
 
-            };
+            }
 
             //Update unit position
             curentBot.set({
@@ -235,7 +236,7 @@ var Game = function($scope) {
             if (self.checkTarget(left, top, curentBot)) {
 
                 curentBot.newAttribute.score++;
-            };
+            }
 
         } else {
 
@@ -245,9 +246,9 @@ var Game = function($scope) {
             if (self.checkTarget(left, top, curentBot)) {
 
                 curentBot.newAttribute.score++;
-            };
+            }
 
-        };
+        }
 
         //if bullet was deleted 
         if (curentBot.blt !== null) {
@@ -257,7 +258,7 @@ var Game = function($scope) {
                 top: top
             });
 
-        };
+        }
 
 
 
@@ -282,8 +283,8 @@ var Game = function($scope) {
         self.everyUnit(function(value, index) {
 
             if (curentBot === value || !value.playMode) {
-                return false
-            };
+                return false;
+            }
 
             //Get dimentions of obj
             var x1 = value.left,
@@ -303,7 +304,7 @@ var Game = function($scope) {
                 collision = {
                     type: 2
                 };
-            };
+            }
         });
 
         return collision;
@@ -361,7 +362,7 @@ var Game = function($scope) {
             curentBot.blt = null;
             curentBot.newAttribute.isShoot = false;
 
-            return false
+            return false;
 
         }
 
@@ -369,7 +370,7 @@ var Game = function($scope) {
 
             if (unit.newAttribute.type === curentBot.newAttribute.type || unit.isCrashed) {
                 return false;
-            };
+            }
 
             //Get dimentions of obj
             var x1 = unit.left,
@@ -398,7 +399,7 @@ var Game = function($scope) {
 
                 return true;
 
-            };
+            }
 
         });
 
@@ -418,7 +419,7 @@ var Game = function($scope) {
         //add unit with getter
         if ($scope.botCounter) {
             timeLine.addBot;
-        };
+        }
 
         //Delete object from canvas with some delay
         var timer = setTimeout(function() {
@@ -457,10 +458,10 @@ var Game = function($scope) {
 
                 if (_id == self.objCollection[prop][i]._id) {
                     arguments.callee();
-                };
+                }
 
-            };
-        };
+            }
+        }
 
         return _id;
     };
@@ -478,10 +479,10 @@ var Game = function($scope) {
 
             if (_id === unicId) {
                 arguments.callee();
-            };
+            }
 
 
-        };
+        }
 
         return _id;
     };
@@ -491,7 +492,7 @@ var Game = function($scope) {
         _(self.objCollection).forEach(function(value, index) {
             callBack(value, index);
         });
-    }
+    };
 
     self.removeThisUnit = function(removeThis) {
 
@@ -508,7 +509,7 @@ var Game = function($scope) {
 
                 var temporObj = self.extendReqiredKeys(destination, updateThis);
                 $.extend(true, value, temporObj);
-            };
+            }
         });
     };
 
@@ -524,14 +525,14 @@ var Game = function($scope) {
 
                     //switch thumbler
                     isLoad = false;
-                };
+                }
             });
 
             if (isLoad) {
 
                 //Go game!
                 callBack(self.objCollection);
-            };
+            }
         }, 500);
     };
 
@@ -593,7 +594,7 @@ var Game = function($scope) {
                 newUnit = $.extend({}, unit);
 
                 allChanges.push(newUnit);
-                self.prepareThisUnit(unit)
+                self.prepareThisUnit(unit);
             }
 
             if (unit.playMode && unit.isCrashed) {
@@ -619,7 +620,7 @@ var Game = function($scope) {
                 setTimeout(function() {
                     unit.playMode = true;
                 }, 500);
-            };
+            }
         });
     };
 
@@ -640,7 +641,7 @@ var Game = function($scope) {
 
     self.setClientIndex = function(index) {
         clientIndex = index;
-    }
+    };
 
     self.getBltCtrl = function() {
         return $.extend({}, self.bulletCtrl);
@@ -654,20 +655,20 @@ var Game = function($scope) {
         var arr = self.rdAngArr.slice(0);
 
         // Cut undesirable angle
-        if (not != undefined) {
+        if (not !== undefined) {
 
             for (var i in arr) {
                 if (arr[i] === not) {
                     arr.splice(i, 1);
                 }
             }
-        };
+        }
 
         //Return random angle
         return arr.sort(function() {
-            return Math.random() > 0.5
+            return Math.random() > 0.5;
         })[0];
     };
 
 
-}
+};

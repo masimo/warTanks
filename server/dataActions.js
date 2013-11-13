@@ -1,14 +1,16 @@
 var DataActions = function() {
 	var self = this;
 
+	var _ = require('lodash-node');
+
 	self.gameData = [];
 
 	self.hostArray = function() {
 
 		var array = [];
 
-		self.gameData.hostCollection.map(function(value) {
-			
+		_(self.gameData.hostCollection).map(function(value) {
+
 			if (value.disabled === false) {
 
 				array.push({
@@ -23,34 +25,24 @@ var DataActions = function() {
 		});
 
 		return array;
-	},
+	};
 	self.clientsCount = function(_id) {
 		var count = 0;
 
-		self.gameData.hostCollection.map(function(value) {
-			if (_id === value.id) {
-				count = value.clients.length;
-			};
-		});
-		return count;
-	},
-	self.getId = function(callBack) {
+		if (_id in self.gameData.hostCollection) {
+			return self.gameData.hostCollection[_id].clients.length;
+		}
+	};
+	self.getId = function() {
 
 		var _id = Math.random().toString(36).substring(2);
 
-		for (var i = 0, len = self.gameData.hostCollection.length; i < len; i++) {
-			if (_id == self.gameData.hostCollection[i].id) {
-				arguments.callee();
-			};
-		};
+		if (_id in self.gameData.hostCollection) {
+			arguments.callee();
+		}
 
-		callBack(_id);
-
-	},
-	self.joinToHost = function(value, key) {
-
-
-	}
+		return _id;
+	};
 };
 
 exports.DataActions = DataActions;

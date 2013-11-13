@@ -15,7 +15,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         startPosition: [24, 282, 575],
         names: ['Boris', 'Den', 'Lyolik', 'Bolik'],
         leftPosition: [200, 400]
-    }
+    };
     var ping = {};
 
     $scope.color = 'f00';
@@ -54,7 +54,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                     disabled: false
                 }
             }
-        }
+        };
 
         //send data about new host
         connection.send(JSON.stringify(hostData));
@@ -80,7 +80,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
                 if (value.secureType === 'protected') {
                     password = prompt('This host protected');
-                };
+                }
 
                 connection.send(JSON.stringify({
                     type: 'joinToHost',
@@ -91,7 +91,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                     }
 
                 }));
-            };
+            }
 
         });
     };
@@ -126,7 +126,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                 $scope.playGame();
             }, 2000);
         });
-    }
+    };
 
     //Create game with bots
     $scope.initGame = function() {
@@ -142,7 +142,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             data: {
                 hostId: $scope.hostId
             }
-        }
+        };
 
         connection.send(JSON.stringify(getClients));
     };
@@ -163,22 +163,20 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         _(data).forEach(function(unit) {
             //We need to know if the object is loaded on host
             if (typeof unit.fill !== 'object') {
-                return false
-                console.log('Unit not loaded "bad data"');
-            };
+                return false;
+            }
 
             //we need to ad new unit
             gamePlay.addThisUnit(unit);
         });
 
         canvas.renderAll();
-    };
+    }
 
     // Initialize Clients
 
     function initClient() {
         var name = $scope.nickName || 'No name';
-        var self = this;
         var pos = rdData.leftPosition.slice(0).sort(function() {
             return Math.random() > 0.5;
         }).shift();
@@ -228,7 +226,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
             objCollection.push(rect);
         });
-    };
+    }
 
     //Create bot
 
@@ -293,7 +291,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             }
         }));
 
-    };
+    }
 
     function updateClient(data, bltData) {
 
@@ -314,7 +312,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                 gamePlay.addThisUnit(remoteUnit);
 
                 return false;
-            };
+            }
 
             _(objCollection).forEach(function(unit, index) {
 
@@ -324,8 +322,8 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
                     if (remoteUnit.isCrashed) {
                         gamePlay.removeThisUnit(unit);
-                    };
-                };
+                    }
+                }
             });
         });
 
@@ -347,7 +345,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
         if (clientBot.newAttribute.isShoot) {
             clientBot.newAttribute.isShoot = false;
-        };
+        }
 
         canvas2.clear();
         canvas2.loadFromJSON(JSON.stringify(bltData));
@@ -355,7 +353,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
         canvas.renderAll();
 
-    };
+    }
 
     function updateData(data, index) {
 
@@ -364,29 +362,31 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             if (unit._id === data._id) {
                 if (!data.newAttribute.isShoot && unit.blt !== null) {
                     data.newAttribute.isShoot = true;
-                };
+                }
                 $.extend(true, unit, data);
-            };
+            }
         });
-    };
+    }
 
     $scope.botCounterAdd = function() {
         //If true then add new bot
         if ($scope.botCounter > 0) {
             $scope.initBot();
             $scope.$apply();
-        };
+        }
     };
 
-    function exitGame() {
+    $scope.exitGame = function (data) {
         canvas.clear();
+        canvas2.clear();
+        objCollection = [];
         $scope.gameMode = false;
         $scope.gameChat = false;
         $scope.chatHistory = '';
         $scope.$apply();
 
-        objCollection = [];
-    }
+        alert('Host left Game ' + data.name);
+    };
 
     $scope.sendGameChat = function(text) {
 
@@ -398,7 +398,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                 'message': message
             }
         }));
-    }
+    };
 
     $scope.showErrorMsg = function(data) {
         $scope.errorMsg = data.message;
@@ -419,7 +419,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
 
             $scope.sendGameChat(text);
 
-        };
+        }
     });
 
     $scope.nickName = prompt('Type youre nick name');
@@ -430,7 +430,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
     if (!window.WebSocket) {
         console.log("Sorry doesn't work");
         return;
-    };
+    }
 
     // open connection
     var host = location.origin.replace(/^http/, 'ws');
@@ -438,8 +438,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
     var connection = new WebSocket(host);
 
     connection.onmessage = function(message) {
+        var json = {};
+
         try {
-            var json = JSON.parse(message.data);
+            json = JSON.parse(message.data);
         } catch (e) {
             console.log('This doesn\'t look like a valid JSON: ', message.data);
             return;
@@ -468,7 +470,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
          */
         if (json.type in listObjects) {
             onMassage[listObjects[json.type]](json.data || null);
-        };
+        }
     };
 
     var onMassage = {
@@ -524,19 +526,18 @@ app.controller('playRoomController', function NormalModeController($scope, $http
             updateData(data.updates, data.index);
         },
         getAvalibleClients: function(data) {
-            for (var i = data.count; i > 0; i--) {
+            var i;
+            for (i = data.count; i > 0; i--) {
                 initClient();
-            };
-            for (var i = 3; i > 0; i--) {
+            }
+            for (i = 3; i > 0; i--) {
                 initBot();
-            };
+            }
             $scope.startGame();
         },
         hostLeftGame: function(data) {
 
-            alert('Host left Game ' + data.name);
-
-            exitGame();
+            $scope.exitGame(data);
         },
         playerScore: function(data) {
             $scope.botCounter = data.botsCount;
@@ -545,13 +546,13 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         checkPing: function(data) {
             $scope.yourPing = (new Date().getTime() - data.pingStart);
 
-            if ($scope.yourPing < 30) {
+            if ($scope.yourPing < 40) {
                 $scope.color = '0A0';
-            } else if ($scope.yourPing >= 0.1 && $scope.yourPing < 0.2) {
+            } else if ($scope.yourPing >= 40 && $scope.yourPing < 120) {
                 $scope.color = 'FF8500';
-            } else if ($scope.yourPing >= 0.2) {
+            } else if ($scope.yourPing >= 120) {
                 $scope.color = 'F00';
-            };
+            }
             $scope.$apply();
         }
     };
@@ -563,7 +564,7 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                 var _cb = function() {
                     cb();
                     webkitRequestAnimationFrame(_cb);
-                }
+                };
                 _cb();
             };
         } else if (window.mozRequestAnimationFrame) {
@@ -571,13 +572,13 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                 var _cb = function() {
                     cb();
                     mozRequestAnimationFrame(_cb);
-                }
+                };
                 _cb();
             };
         } else {
             onEachFrame = function(cb) {
                 setInterval(cb, 1000 / 60);
-            }
+            };
         }
         window.onEachFrame = onEachFrame;
 
