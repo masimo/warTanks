@@ -376,12 +376,14 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         }
     };
 
-    $scope.exitGame = function (data) {
+    $scope.exitGame = function(data) {
         canvas.clear();
         canvas2.clear();
         objCollection = [];
         $scope.gameMode = false;
         $scope.gameChat = false;
+        $scope.botsCount = 20;
+        $scope.score = 0;
         $scope.chatHistory = '';
         $scope.$apply();
 
