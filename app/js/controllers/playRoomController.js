@@ -109,8 +109,6 @@ app.controller('playRoomController', function NormalModeController($scope, $http
                 }
             }));
 
-            console.log(initData);
-
             //add object to hosts canvas
             gamePlay.everyUnit(function(unit) {
 
@@ -434,9 +432,10 @@ app.controller('playRoomController', function NormalModeController($scope, $http
         return;
     }
 
-    // open connection
+    //get URL of host
     var host = location.origin.replace(/^http/, 'ws');
-    console.log(host);
+
+    // open connection
     var connection = new WebSocket(host);
 
     connection.onmessage = function(message) {
